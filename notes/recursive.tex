@@ -1,0 +1,297 @@
+\documentclass[utf-8,xcolor=dvips]{beamer}
+\usepackage{wallpaper}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{pifont}
+
+%\setmainfont{Lucida Std Roman}
+%\setsansfont{Lucida Sans Std Roman}
+%\setmonofont{Source Code Pro}
+\setmainfont{Adobe Song Std}
+\setCJKmainfont[BoldFont={Adobe Heiti Std}]{Adobe Song Std}
+\setCJKmonofont{Adobe Heiti Std}
+\setCJKsansfont{Adobe Fangsong Std}
+
+\mode<presentation> {
+  \usetheme{Copenhagen}
+  \useoutertheme{infolines}
+  %\useinnertheme{rectangles}
+  %\usecolortheme[named=SeaGreen]{structure}
+  %\usecolortheme{lily}
+  \usecolortheme{orchid}
+  \setbeamercovered{transparent}
+  \beamertemplatenavigationsymbolsempty
+}
+
+\newcommand{\qyxreserve}[2]{ % 倒影效果
+  \makebox[0pt][l]{
+    \scalebox{1}[1]{#2}}
+  \raisebox{#1}{\scalebox{1}[-1]{\color[gray]{0.6}{#2}}}
+}
+
+\title[{\fontsize{18}{12}{R}}{\fontsize{12}{12}{ECURSIVE}}]{\bf 漫谈递归}
+\subtitle{\textbf{\textsc{Recursive}}}
+\institute[SomeWhere]{SomeWhere}
+\author{{\fontspec{New Century Schoolbook LT Std} qiaoyx}}
+\date{\tiny 2016-07-01}
+\logo{\includegraphics[width=10mm]{./images/logo.png}}
+\begin{document}
+\frame{
+  \begin{center}
+    \includegraphics[width=\textwidth, height=.42\textheight]{./images/recu5.jpg}
+  \end{center}
+  \titlepage
+}
+
+\lstset{
+  showspaces=false,
+  showtabs=false,
+  tabsize=4,
+  keywordstyle=\color{blue}\tt,
+  language=python,
+  numbers=left,
+  numberstyle=\small,
+  basicstyle=\tt,
+  identifierstyle=\tt,
+  commentstyle=\tt,
+  stringstyle=\tt,
+  frameround=fttt,
+  frame=trBL,
+  framerule=1pt
+}
+
+\defverbatim[colored]\factorialr{%
+\begin{lstlisting}
+ def factorial_r(n):
+     return n if (n == 1) else n * factorial_r(n - 1)
+\end{lstlisting}
+}
+
+\defverbatim[colored]\factoriall{%
+\begin{lstlisting}
+ def factorial_l(n):
+     ret = 1
+     for i in range(1, n + 1):
+         ret = (i if (i == 1) else ret * i)
+     return ret
+\end{lstlisting}
+}
+
+\defverbatim[colored]\fibonaccir{%
+\begin{lstlisting}
+ def fibonacci_r(n):
+     return n if (n == 0 or n == 1) else
+            fibonacci_r(n - 1) + fibonacci_r(n - 2)
+\end{lstlisting}
+}
+
+\defverbatim[colored]\fibonaccit{%
+\begin{lstlisting}
+ def fibonacci_t(n, r, t):
+     return r if (n == 0) else
+            fibonacci_t(n - 1, t, r + t)
+\end{lstlisting}
+}
+
+\defverbatim[colored]\fibonaccil{%
+\begin{lstlisting}
+ def fibonacci_l(n, r=0, t=1):
+     for i in range(n):
+         if n is not 0:
+             t = r + t
+             r = t - r
+     return r
+\end{lstlisting}
+}
+
+\defverbatim[colored]\gcdr{%
+\begin{lstlisting}
+ def gcd_r(x, y):
+     ''' x > y'''
+     return x if (y == 0) else gcd_r(y, x % y)
+\end{lstlisting}
+}
+
+\defverbatim[colored]\gcdrnomod{%
+\begin{lstlisting}
+ def gcd_r_nomod(x, y):
+     if x == y:
+         return x
+     if x > y:
+         return gcd_r_nomod(x - y, y)
+     else:
+         return gcd_r_nomod(y, y - x)
+ \end{lstlisting}
+}
+
+\defverbatim[colored]\gcdl{%
+\begin{lstlisting}
+ def gcd_l(x, y):
+     m = max(x, y)
+     n = min(x, y)
+     while n > 0:
+         t = m % n
+         m = n
+         n = t
+     return m
+\end{lstlisting}
+}
+
+
+\section{背景}
+\frame {\frametitle {程序 ＝ 数据结构 ＋ 算法}
+  \begin{block}{\bf 西方谚语}
+    \centerline{\sc 手里拿三年锤子，看什么都是钉子}
+  \end{block}
+  \begin{enumerate}
+  \item 如果一个人的本事就只会抡大锤，他解决问题的方法就是用锤子砸
+  \item 有时候工具可以决定你的思维
+  \item Coder是编写程序的
+  \item 请用好我们的工具，并不断改进
+  \end{enumerate}
+}
+
+\frame{\frametitle {程序 ＝ 数据结构 ＋ 算法}
+  \begin{block}{\centerline{计算机基础算法思想}}
+    \begin{columns}[c]
+      \begin{column}[T]{.46\textwidth}
+        \begin{enumerate}[\ding{42}]
+        \item 穷举算法
+        \item \textbf{递推算法}
+        \item 分治算法
+        \end{enumerate}
+      \end{column}
+      \begin{column}[T]{.46\textwidth}
+        \begin{enumerate}[\ding{42}]
+        \item 动态规划算法
+        \item 贪心算法
+        \item 概率算法
+        \end{enumerate}
+      \end{column}
+    \end{columns}
+  \end{block}
+}
+
+\section{递归概述}
+\subsection{递归函数}
+\frame{\frametitle{编程语言中的递归函数}
+  \begin{block}{初识递归}
+    \begin{center}
+      {\fontsize{18}{12} \sc 直接或者间接调用自己的函数称为递归函数}
+    \end{center}
+  \end{block}
+  \par 这可能是很多人第一次接触递归时留下的印像。\\
+  再次看到递归概念应该是接触到：
+  \begin{enumerate}
+  \item 阶乘运算
+  \item fibonacci数列
+  \item 汉诺塔 \footnote{\it 涉及到其他内容，为了内容的单一性，本次培训不详细描述。}
+  \item 二叉树
+  \end{enumerate}
+}
+
+\frame{
+  \frametitle{递归版阶乘运算}
+  \factorialr
+}
+
+\frame{
+  \frametitle{迭代版阶乘运算}
+  \factoriall
+}
+
+\subsection{递归思想}
+\frame{\frametitle{递归的特点}
+  \begin{enumerate}
+  \item 循环不变量与退出条件
+  \item 递描述问题，归解决问题
+  \item 递归的数学模型是数学归纳法
+  \item 递归解决以下几类问题：
+    \begin{enumerate}
+    \item 数据的定义是按递归定义的。（Fibonacci函数，n的阶乘）
+    \item 问题解法按递归实现。（回溯）
+    \item 数据的结构形式是按递归定义的。（二叉树的遍历，图的搜索）
+    \end{enumerate}
+  \item 在退出条件前是顺序执行，在退出条件后是栈式结构
+  \item 递归与分治天生的好朋友 \footnote{\it 好搭档合作的例子： 快速排序、FFT、 大整数乘法、 ...}
+  \item 如果你能求出递归的封闭解，下面的内容就可以跳过了。(Fibonacci数列、汉诺塔、约瑟芬环等)
+  \end{enumerate}
+}
+
+\frame{\frametitle{过程演示}
+  \includegraphics[width=\columnwidth,height=.68\textheight]{./images/recursive.jpg}
+}
+
+\frame{\frametitle{过程演示}
+  \includegraphics[width=\columnwidth,height=.5\textheight]{./images/recu1.jpeg}
+}
+
+\subsection{递归与迭代}
+\frame{\frametitle{递归与迭代本质都是循环体，区别是什么？}
+  \begin{block}{函数调用的栈帧结构导致递归对栈空间消耗比循环大}
+    \centering{
+      \includegraphics[width=\columnwidth,width=.8\textwidth]{./images/stack_frame.jpg}
+    }
+  \end{block}
+}
+
+\frame{\frametitle{尾递归}
+  \begin{block}{尾递归： 当前过程退出，正好在上一级过程的退出点}
+    \begin{enumerate}
+    \item 在c++等语言中，尾递归通过-O3优化后，可以很好的消除栈增长问题，同循环的区别不大
+    \item 尾递归转循环，由于当前过程退出，正好在上一级过程的退出点，处理起来比较容易。需要增加一个变量来存储结果。
+    \item 不是尾递归，转换时，退出条件前需要一个变量保存结果，退出条件后需要一个栈式结构进行回溯。
+    \end{enumerate}
+  \end{block}
+}
+
+\frame{
+  \frametitle{非尾递归fibonacci}
+  \fibonaccir
+}
+
+\frame{
+  \frametitle{尾递归fibonacci}
+  \fibonaccit
+}
+
+\frame{
+  \frametitle{尾递归转换为迭代fibonacci}
+  \fibonaccil
+}
+
+\section{使用递归的意义}
+\frame{
+  \begin{enumerate}
+  \item 具备转换相应类型具体问题的思维
+  \item 递归体的边界明确，子过程与原过程具有相同的结构
+  \item 能够使用递归，说明对问题本身的理解已经很好了
+  \item 设计时会首先考虑退出条件，这是一个好习惯
+  \item 递归具备双重结构：队列与栈， 想想内存分配中的堆和栈
+  \end{enumerate}
+}
+
+\frame{
+  \frametitle{最大公约数}
+    有兴趣的同事，可以看看最大公约数算法是怎么从数学归纳法证明到递归实现的过程。对我们解决问题有很好的启发作用。
+
+    \gcdr
+    \gcdl
+}
+\frame{\frametitle{不使用取模运算版递归gcd}
+  \gcdrnomod
+}
+
+\section{结束}
+\frame{
+  \begin{center}
+    \qyxreserve{-2mm}{\fontsize{40}{30} \bf 谢谢大家!}
+  \end{center}
+}
+
+\end{document}

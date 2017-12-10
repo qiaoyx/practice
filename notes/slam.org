@@ -1,0 +1,1698 @@
+#+BEGIN_LaTex
+\lstset{
+  showspaces=false,
+  showtabs=false,
+  tabsize=4,
+  keywordstyle=\color{blue}\tt,
+  language=C++,
+  numbers=left,
+  numberstyle=\small,
+  basicstyle=\tt,
+  directivestyle=\tt,
+  identifierstyle=\tt,
+  commentstyle=\tt,
+  stringstyle=\tt,
+  frameround=fttt,
+  frame=trBL,
+  framerule=1pt,
+  backgroundcolor=\color{yellow!50!blue!30!green!10},
+  % framexleftmargin=10mm,
+  % framexrightmargin=10mm,
+  % framextopmargin=5mm,
+  % framexbottommargin=5mm,
+  emph={GlobalUnlock,GlobalFree},
+  emphstyle=\underbar,
+  emph={[2]GlobalLock,GetImage},
+  emphstyle={[2]\color{red}}
+}
+
+\newtheorem{thm}{公式}[section]
+\newtheorem{lemma}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{definit}[thm]{Definition}
+\newtheorem{remark}[thm]{Remark}
+\newtheorem{axiom}[thm]{Axiom}
+\newtheorem{exercise}[thm]{Exercise}
+#+END_LaTex
+* Document Settings                                                             :noexport:
+#+TITLE:   SLAM学习笔记
+#+LaTeX_HEADER: \usepackage[math]{anttor}
+#+INCLUDE: "report.org"
+#+INCLUDE: "bigblow-html.org"
+#+AUTHOR:  qiaoyx
+#+EMAIL:      qiaoyx@hotmail.com
+
+#+OPTIONS: H:3 num:t toc:t \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:t todo:t pri:t tags:not-in-toc P:t
+#+OPTIONS: html-postamble:nil html-preamble:nil tex:t
+#+LaTeX_HEADER: \usepackage{pst-3d,pst-fill,pst-tree,pst-node,multido,pdftricks,graphicx,pst-eps,pst-eucl,pst-char,pst-grad}
+#+LaTeX_HEADER: \fancyhead[EC,OC]{\sc SLAM学习笔记-乔宇轩}
+#+LaTeX_HEADER: \setcounter{tocdepth}{2}
+#+LaTeX_HEADER: \usepackage[amsmath,thmmarks]{ntheorem}
+#+LaTeX_HEADER: \usepackage{multirow}
+
+#+STARTUP org-startup-with-inline-images
+* 环境搭建
+** Ubuntu环境搭建
+*** 基础环境搭建
+    \begin{lstlisting}[title={依赖环境配置}]
+    sudo apt-get install git-clone cmake freeglut3-dev pkg-config
+                         build-essential libxmu-dev libxi-dev
+                         libusb-1.0-21-dev doxygen grahviz
+                         mono-complete
+    \end{lstlisting}
+
+    解决以下问题的方法：
+    \begin{lstlisting}
+    env: python\r: No such file or directory
+    \end{lstlisting}
+    \begin{lstlisting}
+    vim: :set ff=unix
+    vim: :set fileformat=unix
+    dos2unix file
+    \end{lstlisting}
+*** openni2安装
+    \begin{lstlisting}[title={先安装libfreenect}]
+    git clone git://github.com/Openkinect/libfreenect.git
+    cd libfreenect
+    mkdir build
+    cd build
+    cmake ..
+    make
+    sudo make install
+    cmake .. -DBUILD_OPENNI2_DRIVER=ON
+    make
+    Repository=../../Bin/x64-Release/OpenNI2/Drivers
+    cp -L lib/OpenNI2-FreenectDriver/libFreenectDriver* ${Repository}
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={设置使用传感器权限}]
+    sudo usermod -a -G video usrname
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={回到openni2目录}]
+    sudo cp -r Include /usr/local/include/libopenni2
+    sudo cp -r Bin/x86-Release/OpenNI2 /usr/local/lib
+    sudo cp Bin/x86-Release/libOpenNI2.* /usr/local/lib
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={创建package config文件}]
+    # sudo touch /usr/lib/pkgconfig/libopenni2.pc
+    # sudo vim /usr/lib/pkgconfig/libopenni2.pc
+    # content following
+
+    prefix=/usr/local
+    exec_prefix=$(prefix)
+    libdir=${exec_prefix}/lib
+    includedir=${prefix}/include/libopenni2
+
+    Name: OpenNI2
+    Description: A general purpose driver for all OpenNI cameras.
+    Version: 2.2.0.33
+    Cflags: -I${includedir}
+    Libs: -L${libdir} -lOpenNI2 -L${libdir}/OpenNI2/Drivers -lDummyDevice\
+          -lOniFile -lPS1080.so
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={检验package config}]
+    pkg-config --modversion libopenni2
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={拷贝rules}]
+    cd Packaging/Linux
+    sudo cp primesense-usb.rules /etc/udev/rules.d/557-primesense-usb.rules
+    \end{lstlisting}
+
+*** kinect环境
+    \begin{lstlisting}[title={创建build目录并下载OpenNI源码}]
+    mkdir ~/kinect
+    cd ~/kinect
+    git clone https://github.com/OpenNI/OpenNI.git
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={生成以及安装OpenNI}]
+    cd OpenNI/Platform/Linux/CreateRedist/
+    chmod +x RedistMaker
+    ./RedistMaker
+    cd ../Redist/OpenNI-Bin-Dev-Linux-x64-vXXX/
+    sudo ./install.sh
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={从github下载Avin2 SensorKinect源码}]
+    cd ~/kinect
+    git clone git://github.com/avin2/SensorKinect.git
+    \end{lstlisting}
+
+    \begin{lstlisting}[title={生成以及安装}]
+    cd SensorKinect/Platform/Linux/CreateRedist/
+    chmod +x RedistMaker
+    ./RedistMaker
+    cd ../Redist/Sensor-Bin-Linux-x64-vXXX/
+    chmod +x install.sh
+    sudo ./install.sh
+    \end{lstlisting}
+
+    接下来还需要下载OpenNI兼容中间件二进制包到kinect目录
+    \begin{lstlisting}
+    cd ~/kinect
+    tar -xf nite-bin-linux-x64-vXXX.tar.bz2
+    cd NITE-Bin-Dev-Linux-x64-vXXX/Data
+    \end{lstlisting}
+    需要修改该目录下的三个文件：Sample-Scene.xml, Sample-Tracking.xml,Sample-User.xml，修改其中的
+    \begin{lstlisting}
+    <License vendor="PrimeSense" key=""/>
+    \end{lstlisting}
+    为：
+    \begin{lstlisting}
+    <License vendor="PrimeSense" key="0KOIk2JeIBYClPWVnMoRKn5cdY4"/>
+    \end{lstlisting}
+    返回到NITE目录运行安装脚本
+    \begin{lstlisting}
+    cd ..
+    sudo ./install.sh
+    \end{lstlisting}
+
+    如果示例程序可以运行，说明安装成功
+    \begin{lstlisting}
+    ~/kinect/OpenNI/Platform/Linux/Bin/x64-Relese
+    ~/kinect/NITE-Bin-Dev-Linux-x64-vXXX/Samples/Bin/x64-Relese
+    \end{lstlisting}
+
+    如果遇到如下错误提示：
+    \begin{lstlisting}
+    InitFromXmlfailed:Failed to set USB interface!
+    \end{lstlisting}
+    解决方式：删除gspca_kinect 内核模块
+    \begin{lstlisting}
+    sudo rmmod gspca_kinect
+    \end{lstlisting}
+
+*** 软件包列表
+    #+ATTR_LaTex: :caption \caption{\sc 软件列表} :align c|c|c
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | \bf 软件包          | \bf 附加依赖包                                                 | \bf  描述                                                                                                      |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/libusb/libusb][libusb]]              |                                                                | 跨平台USB驱动                                                                                                  |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | libudev             | libusb                                                         | \begin{tabular}{l} API for enumerating and \\ introspecting local devices. \end{tabular}                       |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/anto/libgudev][libgudev]]            | \begin{tabular}{l}  libudev \\ gobject \end{tabular}           | \begin{tabular}{l} A library providing Gobject \\ bindings for libudev. \end{tabular}                          |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/cryos/eigen][eigen]]               |                                                                | \begin{tabular}{l} A C++ template library \\ for linear algebra. \end{tabular}                                 |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://libqglviewer.com/][libQGLViewer]]        | Qt5/Qt4                                                        | \begin{tabular}{l} A C++ library based on Qt \\ that eases the creation of \\ OpenGL 3D viewers. \end{tabular} |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://www.wxwidgets.org/downloads/][wxWidgets]]           | \begin{tabular}{l} jpeg、png、tiff\\ zlib、expat \end{tabular} | Cross-Platform GUI Library                                                                                     |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://ffmpeg.org/][ffmpeg]]              |                                                                | 音视频库                                                                                                       |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://www.qhull.org/download/][qhull]]               |                                                                | 三维凸包形体生成插件                                                                                           |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://www.cs.ubc.ca/research/flann][flann]]               |                                                                | \begin{tabular}{l} Fast Library for Approximate \\  Nearest Neighbors. \end{tabular}                           |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://freeglut.sourceforge.net][freeglut]]            |                                                                | OpenGL实用工具包                                                                                               |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/OpenKinect/libfreenect/][libfreenect]]         | libusb-1.0                                                     | kinect开源驱动                                                                                                 |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/occipital/OpenNI2][OpenNI2]]             |                                                                | RGB-D相机驱动程序                                                                                              |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/avin2/SensorKinect/downloads][SensorKinect Binary]] | OpenNI2/OpenNI                                                 | PrimeSensor Modules for OpenNI                                                                                 |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/avin2/SensorKinect/downloads][SensorKinect Code]]   | OpenNI2/OpenNI                                                 | PrimeSensor Modules for OpenNI                                                                                 |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://www.vtk.org/download/][VTK]]                 | \begin{tabular}{l} HDF5\\ OpenGL\\ Qt \end{tabular}            | \begin{tabular}{l} 三维计算机图形学以及 \\ 图像处理和可视化库 \end{tabular}                                    |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/PointCloudLibrary/pcl][pcl]]                 | boost                                                          | Point Cloud Library                                                                                            |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[https://github.com/OctoMap/octomap_mapping][octomap]]             | QGLViewer/Qt4                                                  | 导航点云三维地图                                                                                               |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://www.openslam.org/g2o.html][g2o]]                 | QGLViewer/Qt5                                                  | \begin{tabular}{l} A General Framework for \\  Graph Optimization \end{tabular}                                |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+    | [[http://www.mrpt.org/][mrpt]]                | ...                                                            | 移动机器人开发工具箱                                                                                           |
+    |---------------------+----------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------|
+* 视觉SLAM流程以及原理
+** 相关书籍介绍
+   1. 基于OpenCV的计算机视觉技术实现
+   2. Multiple View Geometry in Computer Vision 2nd Edition
+   3. Probabilistic Robotics
+   4. Handbook of Robotics - Springer(Malestrom)
+   5. 计算机视觉算法与应用
+   6. 机器视觉
+** SLAM过程
+   Simultaneous Localization and Mapping: 同步定位与建图，是一种概念：希望机器人
+   从位置环境的未知地点出发，在运动过程中通过重复观测到的地图特征(比如墙角、柱子等)
+   定位自身位置和姿态，再根据自身位置增量式的构建地图，从而达到同时定位和地图构建
+   的目的。
+   \begin{inparadesc}
+   \item[定位] 机器人必须指导自己在环境中的位置；
+   \item[建图] 机器人必须记录环境中特征的位置；
+   \item[SLAM] 机器人在定位的同时建立环境地图。
+   \end{inparadesc}
+   SLAM主要解决的问题如下:
+   \begin{asparadesc}
+   \item[我在什么地方?] 机器人必须知道自身所处的位置才能为下一步的动作做出相应的决策。
+                        移动机器人根据外部或内部传感器获知环境信息来得到自身当前的位置，
+                        即机器人定位问题，是解决后两个问题的基础；
+   \item[我要去那里?] 为了完成自身的任务或者命令，机器人必须指导它将要去那里，在实际
+                      应用中，它必须能够识别目标，并确定目标的状态，即目标定位；
+   \item[我该怎么去?] 一旦机器人知道了它在哪里和将要去那里，那么就必须寻找一条既不碰到
+                      障碍物又能顺利完成工作任务的最优路径，即路径规划问题。
+   \end{asparadesc}
+
+*** 基本框架
+   #+ATTR_LaTex: :caption \caption{\sc SLAM框架} :align r|c|c
+   |------------------+--------------+---------------------------------------------------------------------|
+   | 一级划分         | 二级划分     | 具体方法                                                            |
+   |------------------+--------------+---------------------------------------------------------------------|
+   |                  | 激光扫描图像 |                                                                     |
+   | 传感器数据       | RGB-D图像    |                                                                     |
+   |                  | 点云         |                                                                     |
+   |------------------+--------------+---------------------------------------------------------------------|
+   | 视觉里程计(前端) | 特征匹配     | \begin{tabular}{c} 特征匹配+ICP\\ SolvePnP\\ 单应矩阵 \end{tabular} |
+   |                  | 直接配准     |                                                                     |
+   |------------------+--------------+---------------------------------------------------------------------|
+   | 优化(后端)       | 滤波器       |                                                                     |
+   |                  | 图优化       | Bundle Adjustment                                                   |
+   |------------------+--------------+---------------------------------------------------------------------|
+   |                  | 路标地图     |                                                                     |
+   | 建图             | 度量地图     |                                                                     |
+   |                  | 拓扑地图     |                                                                     |
+   |                  | 混合地图     |                                                                     |
+   |------------------+--------------+---------------------------------------------------------------------|
+   | 回环检测         |              | \begin{tabular}{c} Bag-of-Word\\ DeapLearning\\ ... \end{tabular}   |
+   |------------------+--------------+---------------------------------------------------------------------|
+   #+LaTeX: \clearpage
+
+*** 技术堆叠
+   #+BEGIN_LaTeX
+   \begin{table}[htbp]
+    \caption{ 基于 mrpt 的 rgbd-slam技术堆叠} \centering
+      \begin{tabularx}{14cm}{@{\extracolsep{\fill}} c|c|c|c|c} \toprule[1pt]
+        \multicolumn{5}{c}{传感器数据处理:矫正、标定、配准} \\ \midrule
+        \multicolumn{5}{c}{rawlog:Intensity、range数据载入} \\ \hline
+        \multicolumn{3}{c|}{特征检测} & \multirow{3}*{直接法估计运动} & \multirow{3}*{Bow} \\ \cline{1-3}
+        \multicolumn{2}{c|}{描述子提取} & \multirow{2}*{光流法} & & \\ \cline{1-2}
+        \multicolumn{2}{c|}{特征匹配以及滤波} &&& \\ \cline{1-3}
+        \multicolumn{3}{c|}{基于匹配的运动估计} & & \\ \cline{1-4}
+        \multicolumn{4}{c|}{运动与结构} & \\ \cline{1-4}
+        \multicolumn{4}{c|}{关键帧提取} & \\ \cline{1-4}
+        \multicolumn{4}{c|}{闭环检测} & \\ \cline{1-4}
+        \multicolumn{4}{c|}{Bundle Adjustment} & \\ \cline{1-4}
+        \multicolumn{4}{c|}{结构恢复以及建图} & \\ \cline{1-4}
+        \multicolumn{4}{c|}{导航、GPS、IMU数据融合} & \\
+        \bottomrule[1pt]
+      \end{tabularx}
+   \end{table}
+   #+END_LaTeX
+
+*** 传感器数据
+    Kinect相机图像配准前的准备工作：
+    \begin{asparadesc}
+    \item[畸变矫正] 彩色和红外相机各自的畸变矫正;
+    \item[Kinect相机标定] 计算彩色相机和红外相机之间的相对位姿关系，即旋转和平移。
+    \end{asparadesc}
+    彩色图像和深度图像配置过程就是统一两幅图像的坐标系，统一到彩色图像坐标系。配准
+    后，两个相机的内参都变为彩色相机的内参。再生成点云时，得到的是彩色相机坐标系下
+    的三维点云坐标。
+
+*** 视觉里程计
+    Visual Odometry，即视觉里程计。它估计两个时刻机器人的相对运动(Ego-motion)。在激光SLAM中，
+    我们可以将当前的观测与全局地图进行匹配，用ICP求解相对运动。而对于相机则在欧氏空间中运动，
+    我们经常需要估计一个三维的变换矩阵: $SE(3)$ 或 $Sim(3) \text{: 单目情形}$ 。求解该矩阵是
+    VO的核心问题。求解方式分为：基于特征方法和直接方法。
+    \par 基于特征是目前的主流方式。对于两幅图像：
+    \begin{inparadesc}
+    \item[首先] 要提取图像中的特征；
+    \item[然后] 根据两幅图像的匹配计算相机的变换矩阵。
+    \end{inparadesc}
+    最常用的是点特征，如:
+    \begin{inparadesc}
+    \item[1] Harris角点；
+    \item[2] SIFT；
+    \item[3] SURF；
+    \item[4] ORB。
+    \end{inparadesc}
+    如果使用RGB-D相机，利用已知深度的特征点就可以直接估计相机运动。给定一组特征点以及它们之间
+    的配对关系，求解相机的姿态的问题被称为PnP问题，即：Perspective-N-Point。PnP可以用非线性优
+    化来求解，得到两个帧之间的位置关系。
+    \par 直接配准法不用特征进行VO，它直接把图像所有像素写进一个位姿估计方程，求出帧间相对运动。
+    例如在RGB-D SLAM中可以用ICP(迭代最近邻)求解两个点云之间的变换矩阵。对于单目SLAM，我们可以
+    匹配两个图像间的像素或者图像与一个全局模型相匹配。其典型例子是SVO和LSD-SLAM。它们在单目SLAM
+    中使用直接法，取得了较好的效果。但目前，直接法比特征VO需要更多的计算量，而且对相机的图像采集
+    速率也有较高的要求。
+
+*** 后端处理
+    在VO估计帧间运动之后，理论上就可以得到机器人的轨迹了。然而和普通里程计一样存在累积误差(Drift)。
+
+
+*** 回环检测
+
+*** 建立场景地图
+
+** 射影变换
+*** 射影变换的链式分解
+    #+BEGIN_LaTeX
+    \begin{equation*}
+    \begin{split}
+    \mathtt{H} = & \mathtt{H}_S \mathtt{H}_A \mathtt{H}_P
+    \\ = &
+    \begin{bmatrix}
+    s\mathtt{R} & t/v \\
+    0^{\top} & 1
+    \end{bmatrix}
+    \begin{bmatrix}
+    \mathtt{K} & 0 \\
+    0^{\top} & 1
+    \end{bmatrix}
+    \begin{bmatrix}
+    \mathbf{\mathtt{I}} & 0 \\
+    \mathtt{v}^{\top} & v
+    \end{bmatrix}
+    \\ = &
+    \begin{bmatrix}
+    \mathtt{A} & t \\
+    \mathtt{v}^{\top}  & v
+    \end{bmatrix}
+    \end{split}
+    \end{equation*}
+    \begin{enumerate}
+    \item 其中 $\mathtt{A} = s\mathtt{RK} + tv^{\top}$, $v^{\top}$ 用于消除透视失真
+    \item $\mathtt{K}$ 为 $det\mathtt{K} = 1$ 的上三角矩阵，是摄像机标定的目标
+    \item 当 $v \neq 0$ 时上述分解成立，而当 $s$ 取正值时分解唯一
+    \end{enumerate}
+    #+END_LaTeX
+*** 对偶条件
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item $\mathbb{P}^{2}$ 对偶的条件* [$\mathbb{P}^{2}\sim\mathbb{R}^{3}-(0,0,0)$]
+    \begin{enumerate}
+    \item 点和直线的齐次坐标表示形式一致
+    \item 两相异点唯一确定一条直线
+    \item 两相异直线唯一确定一个点，即交点
+    \footnote{\it 该条件在$\mathbb{R}^{2}$中不成立，如平行线不相交,交点无定义}
+    \end{enumerate}
+    \item $\mathbb{P}^{3}$ 对偶的条件 [$\mathbb{P}^{3}\sim\mathbb{R}^{4}-(0,0,0,0)$]
+    \begin{enumerate}
+    \item 点和平面的齐次坐标表示形式一致
+    \item 三个非共线点唯一确定一个平面
+    \item 三个相异平面唯一确定一个点，即交点
+    \footnote{\it 该条件在$\mathbb{R}^{3}$中不成立，如平行平面不相交}
+    \end{enumerate}
+    \end{enumerate}
+    #+END_LaTeX
+*** 射影变换的层次
+    #+BEGIN_LaTeX
+    \begin{table}[htbp]
+    \caption{ $\mathbb{P}^{2}$ 变换几何不变性质} \centering
+    \begin{threeparttable}[b]
+    \begin{tabular}{rlll} \toprule[1pt]
+    \bf{变换群} & \bf{矩阵形式} & \bf{自由度} & \bf{重要不变性质} \\ \midrule
+    \textbf{欧氏} &
+    $ \begin{bmatrix}
+    \enskip R_{2\times 2} & t_{2\times 1} \\
+    0^{\top} & 1
+    \end{bmatrix} $ \smallskip
+    & 3 & 长度、面积 \\
+    \textbf{相似} &
+    $ \begin{bmatrix}
+    sR_{2\times 2} & t_{2\times 1} \\
+    0^{\top} & 1
+    \end{bmatrix} $ \smallskip
+    & 4 & 夹角\footnote{单视图中最重要的度量性质}、虚圆点 \\
+    \textbf{仿射} &
+    $ \begin{bmatrix}
+    \enskip A_{2\times 2} & t_{2\times 1} \\
+    0^{\top} & 1
+    \end{bmatrix} $ \smallskip
+    & 6 & 无穷远线 $l_{\infty}$  \\
+    \textbf{射影} &
+    $ \begin{bmatrix}
+    \, A_{2\times 2} & t_{2\times 1} \\
+    f_{2\times 1}^{\top}  & w_{1\times 1}
+    \end{bmatrix} $
+    & 8 & 交比 \\
+    \bottomrule[1pt]
+    \end{tabular}
+    \begin{tablenotes}
+    \item[1] R为正交矩阵
+    \item[2] A为可逆矩阵，不要求正交
+    \end{tablenotes}
+    \end{threeparttable}
+    \end{table}
+    #+END_LaTeX
+    #+BEGIN_LaTeX
+    \begin{table}[htbp]
+    \label{tab:guiperformance}
+    \caption{ $\mathbb{P}^{3}$ 变换几何不变性质} \centering
+    \begin{threeparttable}[b]
+    \begin{tabular}{rlll} \toprule[1pt]
+    \bf{变换群} & \bf{矩阵形式} & \bf{自由度} & \bf{重要不变性质} \\ \midrule
+    \textbf{欧氏} &
+    $ \begin{bmatrix}
+    \enskip R_{2\times 2} & t_{2\times 1} \\
+    0^{\top} & 1
+    \end{bmatrix} $ \smallskip
+    & 6 & 体积 \\
+    \textbf{相似} &
+    $ \begin{bmatrix}
+    sR_{2\times 2} & t_{2\times 1} \\
+    0^{\top} & 1
+    \end{bmatrix} $ \smallskip
+    & 7 & 绝对二次曲线 \\
+    \textbf{仿射} &
+    $ \begin{bmatrix}
+    \enskip A_{2\times 2} & t_{2\times 1} \\
+    0^{\top} & 1
+    \end{bmatrix} $ \smallskip
+    & 12 & 无穷远平面 \\
+    \textbf{射影} &
+    $ \begin{bmatrix}
+    \, A_{2\times 2} & t_{2\times 1} \\
+    f_{2\times 1}^{\top}  & w_{1\times 1}
+    \end{bmatrix} $
+    & 15 & 接触平面的相切 \\
+    \bottomrule[1pt]
+    \end{tabular}
+    \begin{tablenotes}
+    \item[1] R为正交矩阵
+    \item[2] A为可逆矩阵，不要求正交
+    \end{tablenotes}
+    \end{threeparttable}
+    \end{table}
+    #+END_LaTeX
+    #+LaTeX:\clearpage
+*** 二维射影平面模型
+    #+BEGIN_COMMENT
+    #+BEGIN_LaTeX
+    \begin{figure}[htb] \centering
+    \includegraphics[width=.66\linewidth]{images/relationship.png}
+    \caption{\sf 变换关系示意图}
+    \end{figure}
+    \begin{figure}[htb] \centering
+    \includegraphics[width=.7\linewidth]{images/2D_Projective_plane.png}
+    \caption{\sf 二维射影平面模型}
+    \end{figure}
+    #+END_LaTeX
+    #+LaTeX:\clearpage
+    #+BEGIN_LaTeX
+    #+END_COMMENT
+
+    \begin{enumerate}
+      \item 理解上，可以把$\mathbb{P}^{2}$看作$\mathbb{R}^{3}$中一种射线的集合
+      \item 该集合所有向量$k(x_{1},x_{2}, x_{3})^{\top}$当$k$变化时形成过原点的射线
+        这样的一条射线可以看作是$\mathbb{P}^{2}$中的一个点
+      \item 模型中，$\mathbb{P}^{2}$中的直线是$\mathbb{R}^{3}$中过原点的平面
+      \item 点和线可以用平面(比如$x_{3}=1$)与这些射线和平面相交得到
+      \item $x_{1}x_{2}-\text{平面}$表示无穷远线$l_{\infty}$,而其上的射线表示理想点
+    \end{enumerate}
+    #+END_LaTeX
+*** 摄像机模型                                                                  :noexport:
+    #+BEGIN_LaTeX
+    \begin{figure}[htb] \centering
+    \includegraphics[width=.9\linewidth]{images/camera_models.png}
+    \caption{\sf 针孔相机模型示意图}
+    \end{figure}
+    #+END_LaTeX
+**** 内参矩阵
+     #+BEGIN_LaTeX
+     \begin{eqnarray*}
+         \mathtt{K}_{3\times 3} =
+         \begin{bmatrix}
+           f_{x} & s & c_{x} \\
+           0 & f_{y} & c_{y} \\
+           0 & 0 & 1
+         \end{bmatrix}
+     \end{eqnarray*}
+     #+END_LaTeX
+     相机内参矩阵又称为标定矩阵，是相机坐标系到图像坐标系的映射关系。
+     #+BEGIN_LaTeX
+     $w(u,v,1)^{\top}=\mathtt{K}(x,y,z)^{\top}$
+     #+END_LaTeX
+     就是射影相机从3维到二维的投影过程。
+**** 相机矩阵
+     #+BEGIN_LaTeX
+     \centerline{$\mathtt{P}_{3\times 4}=\mathtt{K}[\mathtt{R}|t]=[\mathtt{M}|p_{4}]$}
+     \begin{description}
+     \item[相机中心] 相机中心$\mathtt{C}$是$\mathtt{P}$的一维右零空间，满足
+                $\mathtt{PC}=0$
+     \item[列点] $\mathtt{P}_{1}$、 $\mathtt{P}_{2}$、 $\mathtt{P}_{3}$分别对应于$X,Y,Z$轴在图像上的消影点。 \\
+       $\mathtt{P}_{4}$是坐标原点的图像
+     \item[主平面] $\mathtt{P}$的最后一行$\mathtt{P}^{3}$，是过相机中心$\mathtt{C}$并平行于像平面的平面。
+     \item[轴平面] 平面$\mathtt{P}^{1}$和$\mathtt{P}^{2}$表示空间中过相机中心的平面，分别对应于映射到图像上直线
+       $x=0$和$y=0$的点。
+     \item[主点] 图像点
+           $x_{0}=\mathtt{M}m^{3}$
+           是相机的主点，其中$m^{3\top}$是$\mathtt{M}$的第三行。是主轴与像平面的交点。
+       \item[主轴] 是过相机中心$\mathtt{C}$而方向向量为$m^{3\top}$的射线。主轴向量
+             $v=det(\mathtt{M})m^{3}$
+       指向相机的前方。
+     \end{description}
+     #+END_LaTeX
+**** 学习误区
+     #+BEGIN_LaTeX
+     \begin{enumerate}
+     \item 把“单目、双目、结构光”和“单视、双视、多视图”简单对号入座――它们没有直接关系
+     \item 射影变换的别名： 直射变换、保线变换、单应(homography)――不要怕，它们都一样
+     \item 以为有了理想点和无穷远线后我们就建立了“射影坐标系”――其实在研究射影变换的过程中我们只有欧氏坐标系
+     \item 认为对偶就是点和线的对偶――对偶原理比较广泛，点和线的对偶只是一种情况
+     \item 以为平行投影就是在两张平行射影平面间的映射关系――应该理解为入射光平行
+     \item 以为透视投影就是小孔成像模型，透过小孔后成像是倒的――是建立了直角坐标系的中心投影
+     \item 以为平行投影和中心投影也是变换群\footnote{%
+     代数结构: 群、环和域。其中群定义了乘法运算，乘法也称为群运算－摘自《数学指南》}--它们是"变换元"。
+     \end{enumerate}
+     #+END_LaTeX
+** 运动重建过程
+*** 整体流程介绍                                                                :noexport:
+*** 对极几何
+    给定一幅视图的像点 $x$ ，它怎样约束第二幅视图中对应点 $x_{'}$ 的位置？
+    对极几何是两幅视图之间内在的射影几何，独立于景物结构，只依赖于相机内参和相对姿态。
+    本质上，两幅图像之间的对极几何是图像平面与以基线为轴的平面束交的几何。
+
+**** 基本矩阵
+     假设两幅图像由中心不重合的相机获得，则基本矩阵 $F$ 为对所有的对应点 $x\leftrightarrow x^{\prime}$ ， 都满足：
+     $x^{\prime \top}Fx = 0$ 的秩为2的唯一 $3\times 3$ 齐次矩阵。
+     \begin{thm}[基本矩阵的性质]
+     \begin{itemize}
+     \item $F$ 是秩为2、自由度为7的齐次矩阵
+     \item 点对应：如果 $x$ 和 $x^{'}$ 是对应的图像点，那么 $x^{'\top}Fx=0$
+     \item 对极线
+           \begin{itemize}
+           \item $l^{'}=Fx$ 是对应于 $x$ 的对极线
+           \item $l=F^{\top}x^{'}$ 是对应于 $x^{'}$ 的对极线
+           \end{itemize}
+     \item 对极点
+           \begin{itemize}
+           \item $Fe=0$
+           \item $F^{\top}e^{'}=0$
+           \end{itemize}
+     \item 由相机矩阵 $P$、 $P^{'}$ 进行计算：
+           \begin{itemize}
+           \item
+           \begin{thm}[一般相机]
+           \begin{equation*}
+           \begin{cases}
+           F=[e^{'}]_{\times}P^{'}P^{+}\\
+           e^{'}=P^{'}C\\
+           PC=0
+           \end{cases}
+           \end{equation*}
+           \end{thm}
+           \item
+           \begin{thm}[规範相机]
+           \begin{equation*}
+           \begin{cases}
+           P=[I\, |\, 0] & P^{'}=[M\, |\, m]\\
+           F=[e^{'}]_{\times}M & =M^{-\top}[e_{\times}]\\
+           e^{'}=m & e=M^{-1}m
+           \end{cases}
+           \end{equation*}
+           \end{thm}
+           \item
+           \begin{thm}[非无穷远相机]
+           \begin{equation*}
+           \begin{cases}
+           P=K[I\, |\, 0] & P^{'}=K^{'}[R\, |\, t]\\
+           F=K^{'-\top}[t]_{\times}RK^{-1} & = [K^{'}t]_{\times}K^{'}RK^{-1}=K^{'-\top}RK^{\top}[KR^{\top}t]_{\times}
+           \end{cases}
+           \end{equation*}
+           \end{thm}
+           \end{itemize}
+     \end{itemize}
+     \end{thm}
+
+     \begin{thm}[基本矩阵的几何意义]
+     \begin{equation*}
+     \text{基本矩阵的分解} \mapsto
+     \begin{cases}
+     F_{s} = (F + F^{\top})\, /\, 2 & \text{对称部分} \\
+     F_{a} = (F - F^{\top})\, /\, 2 & \text{反对称部分} \\
+     F_{~}  = F_{s} + F_{a} & \text{满足条件}
+     \end{cases}
+     \end{equation*}
+     \end{thm}
+     \par 考虑在两幅图像上映射为相同点的三维空间点 $\mathbb{X}$ 。这样的图像点在相机运动时不变，
+     即： $x = x^{\prime}$ ，满足条件: $x^{\top}Fx = 0$ 。而任何反对称矩阵 $A$ 的二次型形式 $x^{\top}Ax = 0$ ，
+     因此只有 $F$ 的对称部分对 $x^{\top}Fx = 0$ 起作用，从而导出： $x^{\top}F_{s}x = 0$ 。 矩阵 $F_{s}$ 可以
+     看作图像平面上的二次曲线，从几何角度解释为：3维空间中满足 $x = x^{\prime}$ 的点 $\mathbb{X}$ 的轨迹称为
+     同视点曲线。一般来说，该曲线是3维空间中过两个相机中心的一条三次绕线。同视点的像是由 $F_{s}$ 定义的二次曲线。
+
+     \par 对称部分 $F_{s}$ 秩为3,有5个自由度，等同于一条二次曲线，该曲线称为Steiner二次曲线。对极点 $e$ 和 $e^{\prime}$
+     在二次曲线 $F_{s}$ 上。
+     \begin{equation*}
+     Fe=0 \Rightarrow e^{\top}Fe=0 \Rightarrow e^{\top}F_{s}e + e^{\top}F_{a}e=0 \Rightarrow e^{\top}F_{s}e=0
+     \end{equation*}
+     $e^{\prime}$ 的推导与此类似。
+
+     \par 反对称部分 $F_{a}$ 可以记为 $F_{a}=[\mathbf{x}_{a}]_{\times}$ ，其中 $\mathbf{x}_{a}$ 是 $F_{a}$ 的
+     零矢量。 $F_{a}$ 具有2个自由度且等同于点 $\mathbf{x}_{a}$ 。
+
+     \par 对极线的对应： 由一个单应关联的两个直线束，它们对应直线交点的轨迹是一条二次曲线。这两个直线束都是对极线束，分别
+     过 $e$ 和 $e^{\prime}$ 。
+
+**** 本质矩阵
+     本质矩阵是归一化图像坐标下的基本矩阵的特殊形式。基本矩阵可以看作是本质矩阵的推广，基本矩阵把要求标定相机这样一个(非本质的)
+     假设去掉了。与基本矩阵相比较，本质矩阵由较少的自由度但增加了一些性质。
+     \par 归一化坐标： 考虑分解 $P=K[R\, |\, t]$ 的相机矩阵，并令 $x=PX$ 为图像上的一点。如果知道标定矩阵 $K$ ，用它的逆矩阵作
+     用于点 $x$ 得到点 $\hat{x}=K^{-1}x$ 。则 $\hat{x}=[R\, |\, t]X$ ，其中 $\hat{x}$ 是图像上的点在归一化坐标下的表示。它可
+     以被视为空间点 $X$ 在相机  $[R\, |\, t]$ 的标定矩阵等于单位矩阵 $\mathbb{I}$ 情形下的像。相机矩阵 $K^{-1}P=[R\, |\, t]$
+     称为归一化相机矩阵。
+     \par 现在，考虑一对归一化相机矩阵 $P=[I\,|\, 0]$ 和 $P^{'}=[R\, |\, t]$ 。与归一化相机矩阵对应的基本矩阵按惯例称为本质矩阵
+     它具有如下形式：
+     \begin{equation*}
+     E = [t]_{\times}R = R[R^{\top}t]_{\times}
+     \end{equation*}
+
+     \par 用归一化图像坐标表示对应点 $x\leftrightarrow x^{'}$ 时，本质矩阵的定义方程是 $\hat{x}^{'\top}E\hat{x}=0$ 。
+     以 $\hat{x}$ 和 $\hat{x}^{'}$ 的表示代入上式得： $x^{'\top}K^{'-\top}EK^{-1}x=0$ ，把它与基本矩阵关系式
+     $x^{'\top}Fx=0$ 比较可推导出基本矩阵和本质矩阵之间的关系：
+     \begin{equation*}
+     E = K^{'\top}FK
+     \end{equation*}
+
+     \par 本质矩阵 $E = [t]_{\times}R$ 只有5个自由度：旋转矩阵 $R$ 和平移矢量 $t$ 各有3个自由度，但是有一个整体尺度因子的多义性――与
+     基本矩阵一样，本质矩阵也是一个齐次量。本质矩阵减少的自由度数转变为比基本矩阵满足更多的约束： 一个 $3\times 3$ 矩阵是本质矩阵
+     的充要条件是它的奇异值中有两个相等而第三个为0.
+
+     \par 由本质矩阵恢复相机矩阵： 若 $E$ 的SVD分解为 $U\, diag(1,1,0)\, V^{\top}$ ， $E=SR$ 有如下两种可能的分解：
+     \begin{equation*}
+     S=UZU^{\top} \quad R=UWV^{\top} \text{或者} UW^{\top}V^{\top}
+     \end{equation*}
+
+     \par 已知本质矩阵 $E=U\, diag(1,1,0)\, V^{\top}$ 和第一个相机矩阵 $P=[I\, |\, 0]$ ，那么第二个相机矩阵 $P^{'}$ 有下列四种
+     可能的选择：
+     \begin{equation*}
+     P^{'} =
+     \begin{cases}
+     [UWV^{\top}|u_{3}] \\
+     [UWV^{\top}|-u_{3}] \\
+     [UW^{\top}V^{\top}|u_{3}] \\
+     [UW^{\top}V^{\top}|-u_{3}]
+     \end{cases}
+     \end{equation*}
+**** 求解基础矩阵
+***** 八点算法
+***** $LMed$ 算法
+***** $RANSAC$ 算法
+      随机抽样一致性算法
+
+*** 摄像机几何(运动几何)                                                        :noexport:
+*** 景物几何(结构)                                                              :noexport:
+* 框架设计                                                                      :noexport:
+** 整体结构
+   基于mrpt
+** 传感器数据处理
+** 数据载入
+** 相机运动估计
+** 关键帧处理
+** 闭环处理
+   Bow & edges
+** bundle adjustment
+** 建图
+* 开发实战                                                                      :noexport:
+** mrpt工具介绍
+** mrpt samples介绍
+* 辅助内容
+** Bow
+   开源库： Bow/Bow2/FBow。
+   词袋就是图像数据库，由视觉字典树、顺序索引和逆序索引组成。
+   #+BEGIN_LaTeX
+   \begin{description}
+   \item[视觉字典树] 视觉单词在树的叶子节点上
+   \item[顺序索引] 存储图像特征和它们关联的节点
+   \item[逆序索引] 存储每幅图像中视觉单词的权重
+   \end{description}
+   #+END_LaTeX
+*** 权重计算 Weighting
+**** 词频 Term Frequency\\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     w_{i} = n_{id} / n_{d}
+     \begin{cases}
+     n_{id} & \text{为单词在图像d中出现的次数} \\
+     n_{d}  & \text{是图像d中单词的数量}
+     \end{cases}
+     \end{equation*}
+     #+END_LaTeX
+**** 逆向文件频率 Inverse document frequency\\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     w_{i} = \log(n/n_{i})
+     \begin{cases}
+     n     & \text{为图像的数量} \\
+     n_{i} & \text{为图像包含的单词数量}
+     \end{cases}
+     \end{equation*}
+     #+END_LaTeX
+**** 词频-逆向文件频率\\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     w_{i} = \frac{n_{id}}{n_{d}}\log(n/n_{i})
+     \end{equation*}
+     #+END_LaTeX
+**** 二值
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     w_{i} =
+     \begin{cases}
+     1 & word ~ i ~ is ~ present \\
+     0 & otherwise
+     \end{cases}
+     \end{equation*}
+     #+END_LaTeX
+*** 相似度度量 Scoring\\
+    对观测到的样本数据进行判别分类的问题。可以应用统计学中判别分析方法处理，主要有：
+    #+BEGIN_LaTeX
+    \begin{inparaenum}
+    \item 距离判别
+    \item 贝叶斯判别
+    \item 典型判别
+    \end{inparaenum}
+    #+END_LaTeX
+    等几种常用方法。
+    变量按照测量尺度的不同分为三类：
+    #+BEGIN_LaTeX
+    \begin{inparadesc}
+    \item[间隔尺度] 变量是连续的，如长度、速度、温度;
+    \item[有序尺度] 不明确的数量，如等级;
+    \item[名义尺度] 如性别、职业。
+    \end{inparadesc}
+    #+END_LaTeX
+    \par 计算两向量 $v$ 和 $w$ 相似度的几种方法如下，其中 $v^{*}$ $w^{*}$ 分别为 $v$ 和 $w$ 经过
+    $L_{1}$ 范数标准化后的向量
+**** 点积 \\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     S(v, w) = v \cdot w
+     \end{equation*}
+     #+END_LaTeX
+**** $L_{1}$ 范数 \\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     S(v, w) = \|\frac{v}{\|v\|_{1}} - \frac{w}{\|w\|_{1}}\|_{1}
+     \end{equation*}
+     #+END_LaTeX
+**** $L_{2}$ 范数 \\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     S(v, w) = \|\frac{v}{\|v\|_{2}} - \frac{w}{\|w\|_{2}}\|_{2}
+     \end{equation*}
+     #+END_LaTeX
+**** 巴氏距离 \\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     S(v, w) = \sum \sqrt{v_{i}^{*}w_{i}^{*}}
+     \end{equation*}
+     #+END_LaTeX
+**** 卡方距离 \\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     \chi^{2}(v, w) = \sum_{i}\frac{(v_{i}^{*} - w_{i}^{*})^{2}}{(v_{i}^{*} + w_{i}^{*})^{2}} \Rightarrow
+     S(v, w) = \sum_{i|v_{i}^{*} + w_{i}^{*}\neq 0}\frac{(v_{i}^{*} - w_{i}^{*})^{2}}{(v_{i}^{*} + w_{i}^{*})^{2}}
+     \end{equation*}
+     #+END_LaTeX
+**** $KL$ 散度/相对熵 \\
+     #+BEGIN_LaTeX
+     \begin{equation*}
+     KL(v, w) = \sum_{i}v_{i}^{*}\log\frac{v_{i}^{*}}{w_{i}^{*}}
+     \end{equation*}
+     \begin{equation*}
+     S(v, w) = \sum_{i|_{w_{i}^{*}\neq 0}^{v_{i}^{*}\neq 0}}v_{i}^{*}\log\frac{v_{i}^{*}}{w_{i}^{*}}
+             + \sum_{i|_{w_{i}^{*}\neq 0}^{v_{i}^{*}\neq 0}}v_{i}^{*}\log\frac{v_{i}^{*}}{\epsilon}
+     \end{equation*}
+     #+END_LaTeX
+** 齐次坐标系与齐次变换
+   在位姿转换中，通常采用射影空间的齐次坐标表示。记n维空间为 $\mathbb{P}^{n}$ ，其中一个空间点的坐标为普通的3D坐标加一个齐次分量：
+   \begin{equation*}
+   X = [x_{1},\, \dots,\, x_{n},\, \omega]^{\top}
+   \end{equation*}
+   例如，在2维和3维空间中的点，分别表示为：
+   \begin{equation*}
+   \begin{aligned}
+   X_{2D} & = [x,\, y,\, \omega]^{\top} \\ X_{3D} & = [x,\, y,\, z,\, \omega]^{\top}
+   \end{aligned}
+   \end{equation*}
+   机器人运动中，通常表示为：
+   \begin{equation*}
+   X_{3D} = [x/\omega,\, y/\omega,\, z/\omega,\, 1]^{\top}
+   \end{equation*}
+   使用齐次坐标有以下几个原因：
+   1. 齐次坐标下点和直线（高维空间中为超平面）能够使用同样的表达。 \\
+      例如，3D空间 $\mathbb{R}^{n}$ 中， 一个平面 $\pi$ 可由一个方程定义：
+      \begin{equation*}
+      \pi :\,ax + by + cz + d = 0
+      \end{equation*}
+      则该平面 $\pi$ 可以用 $\mathbb{P}^{3}$ 中的坐标 $\pi = [a,\, b,\, c,\, d]^{\top}$ 来描述。
+      这样，点位于平面上就可以简洁的表示为： $\pi ^{\top}X = 0$
+   2. 齐次坐标可以表示无穷远点与无穷远超平面。 \\
+      最后一项坐标为零的点称为无穷远点，它们在 $\mathbb{P}^{n}$ 中真实存在，且能够很方便地参与正常地代数运算。
+      所有无穷远点都在一个平面 $\pi_{\infty} = [0,\, 0,\, 0,\, 1]^{\top}$ 上，
+      记作无穷远平面（2维对应无穷远直线）。
+   3. 齐次坐标可以方便地将平移与旋转放在一个矩阵中
+** 罗德里格斯变换
+   #+BEGIN_LaTeX
+   \begin{equation*}
+   \begin{cases}
+   \begin{aligned}
+   n & = [n_{x}, n_{y}, n_{z}] \\
+   [n]_{\times} & =
+   \begin{bmatrix}
+   0 & -n_{z} & n_{y} \\
+   n_{z} & 0 & -n_{x} \\
+   -n_{y} & n_{x} & 0
+   \end{bmatrix} \\
+   T & =
+   \begin{bmatrix}
+   R_{3\times 3} & t_{3\times 1} \\
+   f_{1\times 3} & w_{1\times 1}
+   \end{bmatrix} \\
+   R(n,\theta) & =
+   \begin{bmatrix}
+   n_{x}^{2}(1 - c\theta) + c\theta & n_{x}n_{y}(1 - c\theta) + n_{z}s\theta & n_{x}n_{z}(1 - c\theta) - n_{y}s\theta \\
+   n_{x}n_{y}(1 - c\theta) - n_{z}s\theta & n_{y}^{2}(1 - c\theta) + c\theta & n_{y}n_{z}(1 - c\theta) + n_{x}s\theta \\
+   n_{x}n_{z}(1 - c\theta) + n_{y}s\theta & n_{y}n_{z}(1 - c\theta) - n_{x}s\theta & n_{z}^{2}(1 - c\theta) + c\theta
+   \end{bmatrix} \\
+    & = \cos\!\theta I + (1-\cos\!\theta)nn^{\top} + \sin\!\theta [n]_{\times} \\
+    & = exp(\theta [n]_{\times}) \\
+   tr(R) & = \cos\!\theta tr(I) + (1-\cos\!\theta)tr(nn^{\top}) + \sin\!\theta tr(n^{\top}) \\
+   & = 3\cos\!\theta + (1-\cos\!\theta) \\
+   & = 1 + 2\cos\!\theta \\
+   \theta & = \arccos(\frac{1}{2}\left[tr(R) - 1\right])
+   \end{aligned}
+   \end{cases}
+   \end{equation*}
+   #+END_LaTeX
+
+   关于旋转轴n，由于旋转轴上的向量在旋转后不发生改变，说明 $Rn = n$ 。因此只要求此方程的解向量即可。
+   这也说明n是R的特征值为1的一个特征向量。罗德里格斯变换可以由so(3)的指数映射推导得出。
+
+** 叉乘
+*** 叉乘的定义
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item
+    \begin{equation*}
+    a \times b =
+    \begin{vmatrix}
+    i & j & k \\
+    a_{x} & a_{y} & a_{z} \\
+    b_{x} & b_{y} & b_{z}
+    \end{vmatrix}
+    =
+    \begin{bmatrix}
+    0 & -a_{z} & a_{y} \\
+    a_{z} & 0 & -a_{x} \\
+    -a_{y} & a_{x} & 0
+    \end{bmatrix}
+    \begin{bmatrix}
+    b_{x} \\ b_{y} \\ b_{z}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    - a_{z}b_{y} + a_{y}b_{z} \\
+    a_{z}b_{x} - a_{x}b_{z} \\
+    - a_{y}b_{x} + a_{x}b_{y}
+    \end{bmatrix}
+    \begin{bmatrix}
+    i \\ j \\ k
+    \end{bmatrix}
+    \end{equation*}
+
+    \item
+    \begin{equation*}
+    \begin{array}{rl}
+    a \times b & = -b \times a = [a]_{\times}b = -[b]_{\times}a \\
+               & = (a_{y}b_{z} - a_{z}b_{y})\overrightarrow{i} + (a_{z}b_{x} - a_{x}b_{z})\overrightarrow{j} + (a_{x}b_{y} - a_{y}b_{x})\overrightarrow{k}
+    \end{array}
+    \end{equation*}
+
+    \item
+    \begin{equation*}
+    [a]_{\times} =
+    \begin{bmatrix}
+    0 & -a_{z} & a_{y} \\
+    a_{z} & 0 & -a_{x} \\
+    -a_{y} & a_{x} & 0
+    \end{bmatrix}
+    \end{equation*}
+    \end{enumerate}
+    #+END_LaTeX
+*** 矩阵的一种分解方法
+    由上节内容可知，向量的叉乘可以转换为一个反对称矩阵与一个向量的积。本节简述反对称矩阵的一些性质。
+    任一矩阵 $A$ 可以分解为对称部分 $W_{1}$ 和反对称部分 $W_{2}$ 。
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item $a_{ij} = a_{ji}$ 的方阵称为对称矩阵，即 $A=A^{\top}$
+    \item $a_{ij} = -a_{ji}$ 的方阵称为反对称矩阵，即 $A=-A^{\top}$
+    \item 矩阵 $A$ 的对称部分 $W_{1}=(A+A^{\top})/2$
+    \item 矩阵 $A$ 的反对称部分 $W_{2}=(A-A^{\top})/2$
+    \item $A=W_{1}+W_{2}$
+    \end{enumerate}
+    #+END_LaTeX
+*** 李代数
+    李代数是由一个集合 $V$ ，一个数域 $F$ 和一个二元运算 $[]$ 组成，如果它满足以下性质，则称
+    $(V,F,[])$ 为一个李代数，记作 $g$ ：
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item 封闭性 $\forall X,Y \in V, [XY] \in V$
+    \item 双线性 $\forall X,Y,Z \in V, a,b \in F$ 有：
+          \begin{enumerate}
+          \item $[aX+bY,Z]=a[XZ]+b[YZ]$
+          \item $[Z,aX+bY]=a[ZX]+b[ZY]$
+          \end{enumerate}
+    \item 自反性 $\forall X \in V, [XX]=0$
+    \item 雅可比等价 $\forall X,Y,Z \in V, [X,[YZ]]+[Y,[ZX]]+[Z,[YX]]=0$
+    \end{enumerate}
+    #+END_LaTeX
+    由上可知： $\mathbb{R}^{n}$ 上定义的\uline{叉积是一种李括号}，因此 $g=(\mathbb{R}^{n}, \mathbb{R}, \times)$
+    构成了一个李代数。李代数的引入是用来解决变换矩阵求导的。接合几节内容，可得出如下结论：
+    #+BEGIN_LaTeX
+    \begin{inparaenum}
+    \item $g=(\mathbb{R}^{n}, \mathbb{R}, \times)$ 构成了一个李代数
+    \item 向量叉乘与反对称矩阵具有高度兼容性
+    \end{inparaenum}
+    #+END_LaTeX
+** 四元数
+*** 四元数介绍
+    相比欧拉角，四元数（Quaternion）则是一种紧凑、易迭代、又不会出现奇异值的表示方法。它在程序中广为使用，例如ROS和几个著名地SLAM公开数据集、g2o等程序都
+    使用四元数记录机器人的姿态。四元数仅是3维姿态的一种表达方式，我们用一个单位四元数表达原本用旋转矩阵表示地三维旋转。这样做地一个直接地好处是省
+    空间。一个旋转阵有9个分量，但只有三个自由度。那么，能不能用三个数来表示呢？可以是可以，但不可避免会出现奇异地情况，欧拉角就是一个例子。而四元数比三维
+    向量多了一个分量，从而可以无奇异地表示各种姿态。\par
+    四元数是Hamilton找到地一种扩展复数。一个四元数拥有一个实部和三个虚部：
+    \begin{equation*}
+    q = q_{0} + q_{1}i + q_{2}j + q_{3}k
+    \end{equation*}
+    其中 $i,\: j,\: k$ 为四元数地三个虚部，满足关系式：
+    \begin{equation*}
+    \begin{cases}
+    i^{2} = j ^{2} = k^{2} = -1 \\
+    ij = k,\quad ji = -k \\
+    jk = i,\quad kj = -i \\
+    ki = j,\quad ik = -j
+    \end{cases}
+    \end{equation*}
+    由于它的这种特殊表示形式，有时人们也用一个标量和一个向量来表达四元数：
+    \begin{equation*}
+    q = [s,\, v], \quad s = q_{0} \in \mathbb{R}, \quad v = [q_{1},\, q_{2},\, q_{3}] \in \mathbb{R}^{3}
+    \end{equation*}
+    此处，标量s称为四元数地实部，而向量v称为它的虚部。如果一个四元数虚部为0,称之为实四元数。反之，若它的实部为0,称之为虚四元数。
+    四元数可以表示三维空间中的任意一个旋转。与旋转矩阵类似，我们仍假设某个旋转是绕单位向量 $n = [n_{x}, n_{y}, n_{z}]^{\top}$
+    进行角度为 $\theta$ 地旋转，那么这个旋转地四元数形式为：
+    \begin{equation*}
+    q =
+    \begin{bmatrix}
+    \cos\!\frac{\theta}{2} & n_{x}\sin\!\frac{\theta}{2} & n_{y}\sin\!\frac{\theta}{2} & n_{z}\sin\!\frac{\theta}{2}
+    \end{bmatrix}^{\top}
+    \end{equation*}
+    事实上，这还是一个模长为1的四元数，称为单位四元数。反之，我们亦可以通过任意一个长度为1地四元数，计算对应旋转轴与夹角：
+    \begin{equation*}
+    \begin{cases}
+    \theta = 2\arccos\! q_{0} \\
+    \left[n_{x},\, n_{y},\, n_{z}\right]^{\top} = [q_{1},\, q_{2},\, q_{3}]^{\top} / \sin\!\frac{\theta}{2}
+    \end{cases}
+    \end{equation*}
+    若某个四元数长度不为1,我们可以通过归一化将其转换为一个模长为1地四元数。
+    对 $\theta$ 加上 $2\pi$ ，得到一个相同的旋转，但此时对应的四元数变成了 $-q$ 。因此，在四元数中，任意的旋转都可以有两个互为相反数地四元数表示。
+    同理，取 $\theta$ 为0,则得到一个没有任何旋转地四元数：
+    \begin{equation*}
+    q_{0} = [\pm 1,\, 0,\, 0,\, 0]^{\top}
+    \end{equation*}
+
+*** 四元数的运算
+    四元数和通常的复数一样，可以进行一系列地运算。常见地四则运算、内积、求逆、共轭、求指数、求对数等等。表示姿态时，它还可以进行插值。
+    现在有两个四元数： $q_{a} = [s_{a}, v_{a}]$ ， $q_{b} = [s_{b}, v_{b}]$ ， 或者：
+    \begin{thm}[原始四元数表示]
+    \begin{equation*}
+    \begin{split}
+    q_{a} & = s_{a} + x_{a}i + y_{a}j + z_{a}k \\
+    q_{b} & = s_{b} + x_{b}i + y_{b}j + z_{b}k
+    \end{split}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[加法和减法运算]
+    \begin{equation*}
+    q_{a} \pm q_{b} = [s_{a} \pm s_{b}, v_{a} \pm v_{b}]
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[乘法运算]
+    \begin{equation*}
+    \begin{split}
+    q_{a}q_{b} & = s_{a}s_{b} - x_{a}x_{b} - y_{a}y_{b} - z_{a}z_{b} \\
+               & + (s_{a}x_{b} + x_{a}s_{b} + y_{a}z_{b} - z_{a}y_{b})i \\
+               & + (s_{a}y_{b} - x_{a}z_{b} + y_{a}s_{b} + z_{a}x_{b})j \\
+               & + (s_{a}z_{b} + s_{a}y_{b} - x_{b}y_{a} + z_{a}s_{b})k
+    \end{split}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[向量形式]
+    \begin{equation*}
+    q_{a}q_{b} = \left[s_{a}s_{b} - v_{a}\cdot v_{b}, s_{a}v_{b} + s_{b}v_{a} + v_{a}\times v_{b}\right]
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[共轭]
+    \begin{equation*}
+    \begin{aligned}
+    q_{a}^{\ast} & = & s_{a} - x_{a}i - y_{a}j - z_{a}k & = & [s_{a}, -v_{a}] \\
+    q^{\ast}q & = & qq^{\ast} = [s_{a}^{2} + v^{\top}v, 0] & = & s_{a}^{2} + v^{\top}v
+    \end{aligned}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[模长]
+    \begin{equation*}
+    \begin{aligned}
+    \|q_{a}\| & = & \sqrt{s_{a}^{2} + x_{a}^{2} + y_{a}^{2} + z_{a}^{2}} & = \sqrt{{q_{a}^{\ast}}^{\top}q_{a}} \\
+    \|q_{a}q_{b}\| & = & \|q_{a}\|\|q_{b}\| &
+    \end{aligned}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[逆]
+    \begin{equation*}
+     \begin{aligned}
+     qq^{-1} = q^{-1}q = 1 \\
+     (q_{a}q_{b})^{-1} = q_{b}^{-1}q_{a}^{-1}
+     \end{aligned}
+     \end{equation*}
+    \end{thm}
+
+    \begin{thm}[数乘与点乘]
+    \begin{equation*}
+    \begin{aligned}
+    kq & = [ks, kv] \\
+    q_{a} \cdot q_{b} & = s_{a}s_{b} + x_{a}x_{b}i + y_{a}y_{b}j + z_{a}z_{b}k
+    \end{aligned}
+    \end{equation*}
+    \end{thm}
+
+*** 四元数表示旋转
+    在复数域 $\mathbb{C}$ ， 可以用一个复数 $e^{i\theta}$ 表示2D的旋转。类似的，3D空间也可以用单位四元数表示旋转。假设一个空间三维点
+    $v = [x, y, z] \in \mathbb{R}^{3}$ ， 以及一个自由旋转轴和夹角n， $\theta$ 指定旋转，则： \par
+    首先，把三维空间点用一个虚四元数来描述：
+    \begin{equation*}
+    p = [0,\, x,\, y,\, z] = [0,\, v]
+    \end{equation*}
+    \par
+    然后，用一个四元数q表示这个旋转：
+    \begin{equation*}
+    q = [\cos\!\frac{\theta}{2},\: n\sin\!\frac{\theta}{2}]
+    \end{equation*}
+    \par
+    那么，旋转后的点 $p^{'}$ 可以表示为这样的乘积：
+    \begin{equation*}
+    p^{'} = qpq^{-1}
+    \end{equation*}
+    \par
+    计算结果的实部为 $n^{\top}(n \times v) = 0$ ， 所以计算结果为纯四元数。其虚部的三个分量表示旋转后3D点的坐标。
+
+*** 四元数到旋转矩阵的转换
+    由于任意单位四元数都可表示一个3D旋转，即SO(3)中的元素，那么就可以找到一个旋转矩阵与之对应。最简单的方式是由四元数q解出旋转角 $\theta$ 和旋转轴n，
+    但这样需要计算一个acrcos函数，代价较大。实际上这个计算可以通过一定的计算技巧绕过。转换方式如下： \par
+    四元数 $q = q_{0} + q_{1}i + q_{2}j + q_{3}k$ 对应的旋转矩阵 $\mathbb{R}$ 为：
+    \begin{equation*}
+    \begin{bmatrix}
+    1-2q_{2}^{2} - 2q_{3}^{2} & 2q_{1}q_{2} + 2q_{0}q_{3} & 2q_{1}q_{3} - 2q_{0}q_{2} \\
+    2q_{1}q_{2} - 2q_{0}q_{3} & 1-2q_{1}^{2} - 2q_{3}^{2} & 2q_{2}q_{3} + 2q_{0}q_{1} \\
+    2q_{1}q_{3} + 2q_{0}q_{2} & 2q_{2}q_{3} - 2q_{0}q_{1} & 1-2q_{1}^{2} - 2q_{2}^{2}
+    \end{bmatrix}
+    \end{equation*}
+    \par 反之，由旋转矩阵到四元数的转换如下，假设矩阵为： $\mathbb{R} = {m_{ij}}, i,j \in [1,\, 2,\, 3]$ ，其对应的四元数由下式给出：
+    \begin{equation*}
+    \begin{cases}
+    q_{0} = \sqrt{tr(R)+ 1}\; /\; 2      \\
+    q_{1} = (m_{23}-m_{32})\; /\; 4q_{0} \\
+    q_{2} = (m_{31}-m_{13})\; /\; 4q_{0} \\
+    q_{3} = (m_{12}-m_{21})\; /\; 4q_{0}
+    \end{cases}
+    \end{equation*}
+    \par 值得注意的是， q和-q表示同一个旋转，R的四元数表示并不是唯一的。存在其他三种与上式类似的计算方式。实际编程中，当 $q_{0}$ 接近0时，其余三个分量
+    会非常大，导致解不稳定，此时会考虑使用剩下的几种方式。
+** 变换对比表                                                                   :noexport:
+   #+begin_LaTeX
+   \begin{table}[htbp]
+   \label{tab:guiperformance}
+   \caption{常见变换性质比较} \centering
+   \begin{threeparttable}[b]
+   \begin{tabularx}{14cm}{@{\extracolsep{\fill}} rlll} \toprule[1pt]
+   \bf{变换名称} & \bf{矩阵形式} & \bf{自由度} & \bf{不变性质} \\ \midrule
+   \textbf{欧氏变换} &
+   $ \begin{bmatrix}
+   \enskip R_{3\times 3} & t_{3\times 1} \\
+   0^{\top} & 1
+   \end{bmatrix} $ \smallskip
+   & 6 & 体积 \\
+   \textbf{相似变换} &
+   $ \begin{bmatrix}
+   sR_{3\times 3} & t_{3\times 1} \\
+   0^{\top} & 1
+   \end{bmatrix} $ \smallskip
+   & 7 & 体积 \\
+   \textbf{仿射变换} &
+   $ \begin{bmatrix}
+   \enskip A_{3\times 3} & t_{3\times 1} \\
+   0^{\top} & 1
+   \end{bmatrix} $ \smallskip
+   & 12 & 平行性、体积比 \\
+   \textbf{射影变换} &
+   $ \begin{bmatrix}
+   \, A_{3\times 3} & t_{3\times 1} \\
+   f_{3\times 1}^{\top}  & w_{1\times 1}
+   \end{bmatrix} $
+   & 15 & 接触平面的相交和相切 \\
+   \bottomrule[1pt]
+   \end{tabularx}
+   \begin{tablenotes}
+   \item[1] R为正交矩阵
+   \item[2] A为可逆矩阵，不要求正交
+   \end{tablenotes}
+   \end{threeparttable}
+   \end{table}
+   #+end_LaTeX
+** 齐次变换的推导
+*** 几何基础
+    2D点在图像中的像素坐标可以用一对数值来表示： $x=(x,\, y)\in \mathbb{R}^{2}$ ，或者表示为：
+    $x=[x\quad y]^{\top}$ 。它的齐次坐标表示为： $x=(x,\, y,\, w)\in \mathbb{P}^{2}$ 。
+    $\mathbb{P}^{2}=\mathbb{R}^{3}-(0,\, 0,\, 0)$ 称作2D投影空间。齐次向量可以通过除以最后一个
+    元素转换回非齐次向量，即： $x=(x,\, y,\, w)=w(x,\, y,\, 1)=wx$ ，其中 $w(x,\, y,\, 1)$
+    是增广向量。最后一个元素是 $w=0$ 的齐次点，称作理想点或无穷远点，它们没有等同的非齐次
+    表达。
+
+    \par 2D直线也可以用齐次坐标表达为： $l=(a,\, b,\, c)$ 。对应的直线方程是：
+    \begin{equation*}
+    x\cdot l = ax + by + c = 0
+    \end{equation*}
+    我们可以规范化直线方程使得 $l=(n_{x},\, n_{y},\, d)=(n,\, d)$ 而 $\|n\|=1$ 。这种情况下，
+    $n$ 是垂直于直线的法向量，$d$ 是其到原点的距离。规范化的一个例外是无穷远处的直线
+    $l=(0,\, 0,\, 1)$ ，它包含所有无穷远处的(理想)点。可以将 $n$ 表示为旋转角度 $\theta$ 的
+    函数， $n=(n_{x},\, n_{y})=(\cos\theta ,\, \sin\theta)$ 。$\theta ,\, d$ 即极坐标表示。
+    使用齐次坐标时，可以如下计算两条直线的交点
+    \begin{equation*}
+    x=l_{1}\times l_{2}
+    \end{equation*}
+    类似的，连接两点的直线可以写为：
+    \begin{equation*}
+    l = x_{1}\times x_{2}
+    \end{equation*}
+    当试图求取多条直线的交点或者通过多个点拟合一条直线时，可以使用最小二乘法。
+
+    #+BEGIN_COMMENT
+    #+BEGIN_LaTex
+    \begin{figure}[htb] \centering
+    \includegraphics[width=.6\linewidth]{images/slam/homo-line.png}
+    \caption{\sf (a)2D直线方程和(b)3D平面方程，用法向量和到原点的距离表达}
+    \end{figure}
+    #+END_LaTex
+    #+END_COMMENT
+    #+LaTeX: \clearpage
+
+    \par 2D圆锥曲线，取名于平面和3D圆锥的交。可以用二次方程写为：$x^{\top}Qx=0$ 。
+    \par 3D点的坐标可以写为非齐次坐标 $x=(x,\, y,\, z)\in \mathbb{R}^{3}$ 或者表示为齐次坐标：
+
+    \begin{equation*}
+    x=(x,\, y,\, z,\, w)\in \mathbb{P}^{3}
+    \end{equation*}
+
+    \par 3D平面也可以表达为齐次坐标 $m=(a,\, b,\, c,\, d)$ ，对应的平面方程为：
+    \begin{equation*}
+    x\cdot m = ax + by + cz + d = 0
+    \end{equation*}
+    \par 同样，规范化平面方程为 $m=(n_{x},\, n_{y},\, n_{z},\, d)=(n,\, d)$ 而 $\|n\|=1$ 。
+    此时 $n$ 是垂直于平面的法向量，$d$ 是其到原点的距离。同样无穷远处的平面
+    $m=(0,\, 0,\, 0,\, 1)$ 包含了所有的无穷远点，不能被规范化。我们同样也可以将 $n$
+    表示为两个角度 $(\theta,\, \phi)$ 的函数：
+    $n=(\cos\theta\cos\phi ,\, \sin\theta\cos\phi ,\, \sin\phi)$ ，即球面坐标。
+
+    \par 3D直线的表示稍显复杂。一种可能的表达是使用直线上的两个点p和q。直线上的其他点都
+    可以表示为这两个点的线性组合 $r=(1-\lambda)p+\lambda q$ 。如果限定 $0 \leqslant\lambda\leqslant 1$ ，
+    得到连接p和q的线段。如果使用其次坐标，可以将直线写为 $r=\mu p + \lambda q$ 。
+    一种特殊的情况是当第二个点位于无穷远时，即 $q=(n_{x},\, n_{y},\, n_{z},\, 0)=(n,\, 0)$ 。
+    其中 $n$ 表示直线的方向，那么非齐次坐标的3D直线方程可以重写为 $r = p + \lambda n$ 。
+
+    #+BEGIN_COMMENT
+    #+BEGIN_LaTex
+    \begin{figure}[htb] \centering
+    \includegraphics[width=.3\linewidth]{images/slam/3D-line.png}
+    \caption{\sf 3D直线方程： $r=(1-\lambda)p+\lambda q$ }
+    \end{figure}
+    #+END_LaTex
+    #+END_COMMENT
+
+    \par 3D直线的端点表示方式的缺点是自由度太多，每个端点3个自由度共6个自由度。实际上3D直线正真具有
+    4个自由度。如果将直线的两个端点固定位于特定的平面上，就得到了具有4个自由度的一个表示
+    $L = pq^{\top} - qp^{\top}$ ，其中p和q是直线上任意不等同的两点。 $L$ 是齐次的而且满足
+    $det(L)=0$ 。
+
+    \par 3D二次曲面 $x^{\top}Qx = 0$ 。
+*** 3D到2D投影
+    已知如何表达2D和3D几何基元以及如何在空间上对其进行变换，我们还需要规定3D基元是如何投影到图像
+    平面上的。可以用3D到2D投影矩阵来实现。最简单的模型是正交投影，不需要除法就可以得到最终的非齐
+    次结果。更常用的模型是透视投影，它能更精确地反映真实相机的性能。
+    \par 正交投影简单的舍弃三维坐标p的z分量来得到2D点 $x$ 。可以写作 $x=[I_{2\times 2}|0]p$ 。
+    使用其次(投影)坐标，可以写作：
+    \begin{equation*}
+    x =
+    \begin{bmatrix}
+    1 & 0 & 0 & 0 \\
+    0 & 1 & 0 & 0 \\
+    0 & 0 & 0 & 1
+    \end{bmatrix}
+    p
+    \end{equation*}
+    即，舍弃 $z$ 分量但保留 $w$ 分量。正交投影是对长焦距镜头和物体当其自身的深度与其到相机的距离
+    相比很浅时的近似模型。它只对远心镜头才是精确的。在时间中世界坐标和图像传感器的度量不同，需要
+    按比例缩放。因此，归一化的正交投影(scaled orthography)实际上更常用:
+    \begin{equation*}
+    s = [sI_{2\times 2}|0]p
+    \end{equation*}
+    该模型等同于先将世界坐标点投影在一个局部的正面平行(fronto-parallel)图像平面上，然后将该图像
+    用常规的透视投影缩放。这种缩放可以对场景所有部分都相同或者对独立建模的不同物体各有不同。
+    更重要的是缩放在估计有运动到结构时可以逐帧改变，这可以更好的对物体接近相机时出现的缩放
+    变换进行建模。
+    \par 在重建远离相机的物体的3D形状时，因为可以大大简化某些计算，归一的正交投影是常用模型。一个紧密
+    相关的投影模型是类透视投影。该模型中，物体点也是先投影到一个平行于图像平面的局部参考面上。但
+    是，不是正交地投影到该平面上，而是按照平行于物体中心的视线来投影。然后按照通常的投影方式投影
+    到最终的图像平面上，即对应于缩放。这两个投影的组合也就是放射，可以写作：
+    \begin{equation*}
+    x=
+    \begin{bmatrix}
+    a_{11} & a_{12} & a_{13} & a_{14} \\
+    a_{21} & a_{22} & a_{23} & a_{24} \\
+    0 & 0 & 0 & 1
+    \end{bmatrix}
+    p
+    \end{equation*}
+
+    #+BEGIN_COMMENT
+    #+BEGIN_LaTex
+    \begin{figure}[htb] \centering
+    \includegraphics[width=.8\linewidth]{images/slam/graphy-model.png}
+    \caption{\sf 常用的投影模型}
+    \end{figure}
+    #+END_LaTex
+    #+END_COMMENT
+    #+LaTeX: \clearpage
+*** 透视投影
+    点映射到图像平面上是通过除以其 $z$ 分量来实现的。使用非齐次坐标可以写为：
+    \begin{equation*}
+    x = \it{P}_{z}(p) = [x/z,\, y/z,\, 1]^{\top}
+    \end{equation*}
+    在齐次坐标下，投影具有简单的线性形式：
+    \begin{equation*}
+    x =
+    \begin{bmatrix}
+    1 & 0 & 0 & 0 \\
+    0 & 1 & 0 & 0 \\
+    0 & 0 & 1 & 0
+    \end{bmatrix}
+    p
+    \end{equation*}
+    即舍弃 $p$ 点的 $w$ 分量。这样，在投影后，就不可能恢复该3D点到图像的距离了。
+    在计算机图形学中常见的一种形式是一个两步投影，首先蒋3D坐标投影到范围在
+    $(x,\, y,\, z)\in [-1,\, 1]\times [-1,\, 1]\times [0,\, 1]$ 的规范化设备坐标上，
+    然后用视口变换将这些坐标缩放成整数的像素坐标。该透视投影就可以用 $4\times 4$
+    矩阵表示：
+    \begin{equation*}
+    x =
+    \begin{bmatrix}
+    1 & 0 & 0 & 0 \\
+    0 & 1 & 0 & 0 \\
+    0 & 0 & -z_{far}/z_{range} & z_{near}z_{far}/z_{range} \\
+    0 & 0 & 1 & 0
+    \end{bmatrix}
+    p
+    \end{equation*}
+    其中 $z_{near}$ 和 $z_{far}$ 是近和远 $z$ 裁剪面， $z_{range}=z_{far}-z_{near}$ 。
+    注意，前两行实际上是以焦距和横纵比缩放的，以便可见光线映射到 $(x,\, y,\, z)\in [-1,\, 1]^{2}$ 。
+    保留而不是舍弃第三行的原因是可见性运算，需要对所绘制的每个图形单元有一个深度。
+*** 相机内参
+    一旦将3D点使用一个投影矩阵穿过一个理想的针孔投影之后，我们还需要对结果坐标根据像素传感器的间距
+    和传感器平面到原点的相对位置进行变换。图像传感器返回以整数像素坐标 $x_{s},\, y_{s}$ 为索引的
+    像素坐标值，通常以图像左上角为坐标起点而沿着向下和向右方向移动。
+** 滤波算法介绍
+*** 贝叶斯滤波
+    基本的概率分布模型： $p(x_{t}\, |\, x_{0:t-1},\, z_{1:t-1},\, u_{1:t})$ 。说明当前状态 $x_{t}$ 依赖于过去所有的状态、控制量以及传感器测量值。
+    令 $x_{t-1}$ 来表示到达该点之前的所有控制量 $u_{1:t-1}$ 和量测值 $z_{1:t-1}$ 的统计信息。综上，在 $x_{t-1}$ 已知的情况下， 机器人状态仅和
+    上一次控制有关，表示为：
+    \begin{equation*}
+    p(x_{t}\, |\, x_{0:t-1},\, z_{1:t-1},\, u_{1:t}) = p(x_{t}\, |\, x_{t-1},\, u_{t})
+    \end{equation*}
+    同样，当前量测值只和当前状态相关，表示如下：
+    \begin{equation*}
+    p(z_{t}\, |\, x_{0:t},\, z_{1:t-1},\, u_{1:t}) = p(z_{t}\, |\, x_{t})
+    \end{equation*}
+
+    #+BEGIN_COMMENT
+    \begin{algorithm}[ht]
+    \KwIn{bel($x_{t-1}$), $u_{t}$ , $z_{t}$}
+    \caption{Algorithm Bayes Filter}
+    \ForEach{ $x_{t}$ } {
+    $\overline{bel}$ ( $x_{t}$ ) = $\int$ p( $x_{t}\, |\, u_{t}, x_{t-1})bel(x_{t-1})dx_{t-1}$ \\
+    bel( $x_{t}$ ) = $\eta$ $p(z_{t}\, |\, x_{t})\overline{bel}(x_{t})$
+    }
+    \Return{bel( $x_{t}$ )}
+    \end{algorithm}
+    #+END_COMMENT
+
+    \begin{thm}[公式推导]
+    \begin{equation*}
+    \begin{aligned}
+    p(x_{t}\, |\, z_{1:t}, u_{1:t}) & = \
+    \frac{p(z_{t}\, |\, x_{t}, z_{1:t-1}, u_{1:t})\, p(x_{t}\, |\, z_{1:t-1}, u_{1:t})}{p(z_{t}\, |\, z_{1:t-1}, u_{1:t})} \\
+    & =  \eta\, p(z_{t}\, |\, x_{t}, z_{1:t-1}, u_{1:t})\, p(x_{t}\, |\, z_{1:t-1}, u_{1:t}) \\
+    p(z_{t}\, |\, x_{t}, z_{1:t-1}, u_{1:t}) &= p(z_{t}\, |\, x_{t}) \\
+    p(x_{t}\, |\, z_{1:t}, u_{1:t}) &= \eta\, p(z_{t}\, |\, x_{t})\, p(x_{t}\, |\, z_{1:t-1}, u_{1:t})\\
+    bel(x_{t}) &= \eta\, p(z_{t}\, |\, x_{t})\, \overline{bel}(x_{t}) \\
+    \overline{bel}(x_{t}) &= p(x_{t}\, |\, z_{1:t-1}, u_{1:t}) \\
+    &= \int p(x_{t}\, |\, x_{t-1}, z_{1:t-1}, u_{1:t})\, p(x_{t-1}\, |\, z_{1:t-1}, u_{1:t})\,dx_{t-1}\\
+    p(x_{t}\, |\, x_{t-1}, z_{1:t-1}, u_{1:t}) &= p(x_{t}\, |\, x_{t-1}, u_{t}) \\
+    \overline{bel}(x_{t}) &= \int p(x_{t}\, |\, x_{t-1}, u_{t})\, p(x_{t-1}\, |\, z_{1:t-1}, u_{1:t-1})\,dx_{t-1}\\
+    \end{aligned}
+    \end{equation*}
+    \end{thm}
+*** 卡尔曼滤波和EKF
+*** 信息滤波
+*** 粒子滤波
+    粒子滤波(Particle Filter: PF)，是蒙特卡罗方法的一种应用。其基本思想是建立在大数定理上，即由频率来近似概率。
+    粒子滤波利用粒子来表示概率，核心步骤是通过从后验概率中抽取的随机状态粒子来表示分布。其主要过程包括：
+    #+BEGIN_LaTeX
+    \begin{inparaenum}
+    \item 初始化;
+    \item 状态转移;
+    \item 权重计算;
+    \item 重采样。
+    \end{inparaenum}
+    #+END_LaTeX
+    \par 在初始化阶段，手动或自动选取要跟踪的区域并且释放粒子。在状态转移阶段，通过前一次的先验概率来估算出当前环境
+    下的后验概率密度，同样是由粒子来完成。之后的权重计算和重采样阶段，对每个粒子重新打分，淘汰权值低的粒子并且由权值
+    高的粒子产生更多的粒子。 粒子滤波的优点：
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item 可以用在任何形式的状态空间模型上，而卡尔曼滤波则是在样本满足高斯正态分布情况下的最优方法。
+    \item 将复杂的积分运算转化为离散情况下的求和运算。
+    \end{enumerate}
+    #+END_LaTeX
+**** 基本算法 \\
+     粒子滤波有多种变体，单其基本的算法思路有两种：
+     #+BEGIN_LaTeX
+     \begin{enumerate}
+     \item Sequential Importance Sampling: SIS
+     \item Sample Importance Resampling: SIR
+     \end{enumerate}
+     #+END_LaTeX
+**** 退化问题： Degeneracy Problem \\
+     SIS方式存在退化现象，即经过一定的迭代次数后，除了一个粒子外，其余粒子的权重值都变得微不足道。
+     主要解决方法：
+     #+BEGIN_LaTeX
+     \begin{enumerate}
+     \item 强力法：增加粒子数，效率低;
+     \item 选择好的重要性函数，该方法难于实现;
+     \item 重采样：目前的主流做法。
+     \end{enumerate}
+     #+END_LaTeX
+**** 样本枯竭现象： Sample impoverishment \\
+     SIR方式存在样本枯竭现象，权重高的粒子被统计的选择多次，导致粒子集丧失多样性。采用定期重采样
+     方法来解决。
+*** 动态系统模型
+    上述各滤波算法在SLAM中的应用，具有一个共同的特性：即需要对动态系统建模。
+    而动态系统一般通过两个方程来建模：
+    \begin{description}
+    \item[状态转移方程] State Transition Equation，形如： $x_{k}=f(x_{k-1})+w_{k}$
+    \item[测量方程] Measurement Equation，形如： $y_{k}=h(x_{k})+v_{k}$
+    \end{description}
+    动态系统模型本质上是递推的Bayes过程，其具有预测和校正两个主要的步骤。
+
+** 概率学基础
+*** 贝叶斯公式
+    \begin{thm}[条件概率公式]
+    \begin{equation*}
+    p(x\,|\, y) = \frac{p(x,y)}{p(y)}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[全概率公式]
+    \begin{equation*}
+    p(x) =
+    \begin{cases}
+    \sum_{y}p(x\, |\, y)p(y) & discrete ~ case \\
+    \int_{y}p(x\, |\, y)p(y)\, dy & continous ~ case
+    \end{cases}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[贝叶斯公式]
+    \begin{equation*}
+    p(x\, |\, y) = \frac{p(y\, |\, x)}{p(y)}p{x} =
+    \begin{cases}
+    \frac{p(y\, |\, x)p(x)}{\sum_{x^{'}}p(y\, |\, x^{'})p(x^{'})} \\
+    \frac{p(y\, |\, x)p(x)}{\int_{x^{'}}p(y\, |\, x^{'})p(x^{'})\, dx^{'}}
+    \end{cases}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[正则化贝叶斯公式]
+    \begin{equation*}
+    p(x\, |\, y) = \eta\, p(y\, |\, x)p(x)
+    \end{equation*}
+    \end{thm}
+
+*** 分布函数的数字特征
+*** 参数估计
+**** 矩估计
+**** 极大似然估计 $ML$
+     基本思路：在已经得到试验结果的情况下，找出使得这个结果出现的可能性最大的那个 $\theta$ 做为真实 $\theta$ 的估计。极大似然估计中采样需
+     满足一个重要得假设，即所有的采样都是独立分布的。假设 $x_{1}, x_{2}, \cdots, x_{n}$ 为独立分布的采样， $\theta$ 为模型参数， $f$ 为我们
+     所使用的模型，在遵循上述独立同分布假设，参数为 $\theta$ 的模型 $f$ 产生上述采样可以表示为：
+     \begin{equation*}
+     f(x_{1}, x_{2}, \cdots, x_{n} \:|\: \theta) = f(x_{1}\:|\:\theta)f(x_{2}\:|\:\theta)\cdots f(x_{n}\:|\:\theta)
+     \end{equation*}
+     基于“模型已定，参数未知”，现在 $x_{1}, x_{2}, \cdots, x_{n}$ 已知， $\theta$ 未知，那么似然估计定义为：
+     \begin{equation*}
+     L(\theta \:|\: x_{1}, x_{2}, \cdots, x_{n}) = f(x_{1}, x_{2}, \cdots, x_{n} \:|\: \theta) = \prod_{i=1}^{n}f(x_{i}\:|\:\theta)
+     \end{equation*}
+     在实际应用中，两边取对数得到对数似然公式：
+     \begin{equation*}
+     \ln L(\theta \:|\: x_{1}, x_{2}, \cdots, x_{n}) = \sum_{i=1}^{n}\ln f(x_{i}\:|\:\theta)
+     \end{equation*}
+     平均对数似然记为： $\hat{l} = \frac{1}{n}\ln L$ \\
+     而我们要求的最大似然就是最大的对数平均似然，即：
+     \begin{equation*}
+     \hat{\theta}_{mle} = arg\, \max \hat{l}(\theta \:|\: x_{1}, x_{2}, \cdots, x_{n})
+     \end{equation*}
+     假设 $X \sim \mathcal{N}(\mu,\,\sigma^{2})$ ， 那么 $f(x)=\frac{1}{\sigma\sqrt{2\pi}}\exp\left(-\frac{\left(x\, -\, \mu\right)^{2}}{2\sigma^{2}}\right)$
+     \begin{equation*}
+     L(\theta \:|\: x_{1}, x_{2}, \cdots, x_{n}) = (\frac{1}{\sigma\sqrt{2\pi}})^{n}\exp\left(-\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}(x\, -\, \mu)^{2}\right)
+     \end{equation*}
+     对 $\mu$ 求导得：
+     \begin{equation*}
+     L(\theta \:|\: x_{1}, x_{2}, \cdots, x_{n}) =\
+     (\frac{1}{\sigma\sqrt{2\pi}})^{n}\exp\left(-\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}(x\, -\, \mu)^{2}\right)\
+     \frac{\sum_{i=1}^{n}\! x_{i} \, -\, n\mu}{\sigma^{2}}
+     \end{equation*}
+
+     #+LaTex: \newpage
+     极大似然估计的一般求解过程：
+     1. 写出似然函数
+     2. 对似然函数取对数
+     3. 求导数
+     4. 解似然方程
+
+**** 极大后验估计 $MAP$
+     极大后验估计是根据经验数据获得对难以观察的量的点估计。对极大似然估计类似。但最大的不同在于：极大后验估计
+     融入了要估计量的先验分布在内，所以极大后验估计可以看作规则化的极大似然估计。
+     \begin{thm}[极大似然估计]
+     \begin{equation*}
+     \hat{\theta}_{mle} = arg\, \max \hat{l}(\theta \:|\: x_{1}, x_{2}, \cdots, x_{n})
+     \end{equation*}
+     \end{thm}
+     现在，假设 $\theta$ 的先验分布为 $g$ ，通过贝叶斯公式， $\theta$ 的后验分布如下所示：
+     \begin{thm}[后验分布]
+     \begin{equation*}
+     \theta \mapsto f(\theta \: |\: x) =\
+     \frac{f(x\: |\:\theta)g(\theta)}{\int_{\vartheta\in\Theta}f(x\: |\:\vartheta)g(\vartheta)\:d\vartheta}
+     \end{equation*}
+     \end{thm}
+     \begin{thm}[最大后验估计的目标]
+     \begin{equation*}
+     \hat{\theta}_{MAP}(x) = arg\, max\frac{f(x\: |\:\theta)g(\theta)}{\int_{\vartheta\in\Theta}f(x\: |\:\vartheta)g(\vartheta)\:d\vartheta}\
+     = arg\, max f(x\: |\:\theta)g(\theta)
+     \end{equation*}
+     \end{thm}
+
+*** $Markov Chain$
+*** 回归
+**** 概率论的角度
+     1. Least Square的解析可以用Gaussian分布以及最大似然估计求得
+     2. Ridge回归可以用Gaussian分布和最大后验估计解释
+     3. LASSO回归可以用Laplace 分布和最大后验估计解释
+**** 回归模型
+     \begin{thm}[假设线性回归模型具有如下形式]
+     \begin{equation*}
+     f(\mathbf{x}) = \sum_{j=1}^{d}x_{j}w_{j} + \varepsilon = \mathbf{xw}^{\top} + \varepsilon
+     \end{equation*}
+
+     其中 $\mathbf{x} \in \mathbb{R}^{1 \times d}$ ,
+     $\mathbf{w} \in \mathbb{R}^{1 \times d}$ ,
+     误差 $\varepsilon \in \mathbb{R}$ 。
+     \end{thm}
+     \par 当前已知 $\mathbf{X} = (x_{1} \dots x_{n})^{\top} \in \mathbb{R}^{n \times d}$ , $y \in \mathbb{R}^{n \times 1}$ ， 怎么求 $\mathbf{w}$ 呢？
+**** $\mathbf{Least ~ Square}$
+     假设 $\varepsilon_{i} \sim \mathcal{N} (0,\sigma^{2})$ ， 即 $\mathbf{y}_{i} \sim \mathcal{N}(\mathbf{x}_{i}\mathbf{w}^{\top}, \sigma^{2})$ ，
+     那么用最大似然估计推导：
+     \begin{equation*}
+     \begin{aligned}
+     arg\, max_{\mathbf{w}}L(W) & = \ln\prod_{i=1}^{n}\frac{1}{\sigma\sqrt{2\pi}}\exp\left(-\frac{1}{2}(\frac{\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top}}{\sigma})^{2}\right) \\
+                             & = -\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}(\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top})^{2} - n\ln\sigma\sqrt{2\pi} \\
+     arg\, min_{\mathbf{w}}F(W) & = \sum_{i=1}^{n}(\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top})^{2} \\
+                             & = \|\mathbf{y} - \mathbf{Xw}^{\top}\|_{2}^{2}
+     \end{aligned}
+     \end{equation*}
+     #+LaTeX: \newpage
+
+**** $\mathbf{Ridge}$
+     假设满足条件：
+     $\varepsilon_{i} \sim \mathcal{N} (0,\sigma^{2})$ ，即：
+     $\mathbf{w}_{i} \sim \mathcal{N} (0,\tau^{2})$ ,
+     那么用最大后验估计推导:
+     \begin{equation*}
+     \begin{aligned}
+     arg\, max_{\mathbf{w}}L(W) & = \ln\prod_{i=1}^{n}\frac{1}{\sigma\sqrt{2\pi}}\exp\left(-\frac{1}{2}\
+     (\frac{\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top}}{\sigma})^{2}\right)
+     \cdot \prod_{j=1}^{d}\frac{1}{\tau\sqrt{2\pi}}\exp\left(-\frac{1}{2}\
+     (\frac{\mathbf{w}_{j}}{\tau})^{2}\right) \\
+     & = -\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}(\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top})^{2}\
+     - \frac{1}{2\tau^{2}}\sum_{j=1}^{d}\mathbf{w}_{j}^{2} \
+     - n\ln\sigma\sqrt{2\pi} - d\ln\tau\sqrt{2\pi} \\
+     arg\, min_{\mathbf{w}}F(W) & = \sum_{i=1}^{n}(\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top})^{2} + \lambda\sum_{j=1}^{d}\mathbf{w}_{j}^{2} \\
+     & = \|\mathbf{y} - \mathbf{Xw}^{\top}\|_{2}^{2} + \lambda\|\mathbf{w}\|_{2}^{2}
+     \end{aligned}
+     \end{equation*}
+
+**** $\mathbf{LASSO}$
+     假设满足条件：
+     $\varepsilon_{i} \sim \mathcal{N} (0,\sigma^{2})$ ，即：
+     $\mathbf{w}_{i} \sim Laplace(0,b)$ ，
+     那么用最大后验估计推导:
+     \begin{equation*}
+     \begin{aligned}
+     arg\, max_{\mathbf{w}}L(W) & = \ln\prod_{i=1}^{n}\frac{1}{\sigma\sqrt{2\pi}}\exp\left(-\frac{1}{2}\
+     (\frac{\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top}}{\sigma})^{2}\right)
+     \cdot \prod_{j=1}^{d}\frac{1}{2b}\exp(-\frac{|\mathbf{w}_{j}|}{b}) \\
+     & = -\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}(\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top})^{2}\
+     - \frac{1}{2b^{2}}\sum_{j=1}^{d}|\mathbf{w}_{j}| \
+     - n\ln\sigma\sqrt{2\pi} - d\ln 2b \\
+     arg\, min_{\mathbf{w}}F(W) & = \sum_{i=1}^{n}(\mathbf{y_{i}}-\mathbf{x}_{i}\mathbf{w}^{\top})^{2} + \lambda\sum_{j=1}^{d}|\mathbf{w}_{j}| \\
+     & = \|\mathbf{y} - \mathbf{Xw}^{\top}\|_{2}^{2} + \lambda\|\mathbf{w}\|_{1}
+     \end{aligned}
+     \end{equation*}
+
+** 线性变换基础
+*** LU分解
+*** QR分解
+*** 二次型及协方差阵
+*** 奇异值分解 $\mathbf{SVD}$
+** 几何基础                                                                     :noexport:
+   \begin{thm}[两向量共线]
+   \begin{equation*}
+   l = [e]_{\times}x
+   \end{equation*}
+   \end{thm}
+
+   \begin{thm}[三向量共面]
+   \begin{equation*}
+   a\cdot b \times c = 0\Rightarrow a[b]_{\times}c = 0
+   \end{equation*}
+   \end{thm}
+*** $Jacobian\, And\, Henssian$
+** 微积分基础
+*** 微积分基本定理
+    \begin{thm}[微积分第一基本定理]
+    如果函数 $f$ 在闭区间 $[a, b]$ 是连续的，那么可以定义 $F$ 为
+    $F(x)=\int_{a}^{x}\, f(t)\, dt$ ， $x$ 在区间 $[a, b]$ 内，则
+    $F$ 在开区间 $(a, b)$ 内是可导函数，而且 $F^{'}(x)=f(x)$ 。即：
+    \begin{equation*}
+    \frac{d}{dx}\int_{a}^{x}\, f(t)\, dt = f(x)
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[微积分第二基本定理]
+    如果函数 $f$ 在闭区间 $[a, b]$ 是连续的，$F$ 是 $f$ 的反导数，
+    那么有：
+    \begin{equation*}
+    \int_{a}^{b}\, f(x)\, dx = F(b) - F(a) = F(x)\biggm|_{a}^{b}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[不定积分]
+    如果 $\frac{d}{dx}F(x)=f(x)$ ，那么 $\int f(x)\, dx = F(x) + C$ 。
+    \end{thm}
+
+*** 换元法
+    通过使用换元法来找链式求导法则的逆运算
+    \begin{thm}
+    \begin{equation*}
+    h(x) = f(g(x)), h^{'}(x) = f^{'}(g(x))g^{'}(x)
+    \end{equation*}
+    \end{thm}
+*** 分部积分法
+    通过分部积分法来找乘积求导法则的逆运算称为分部积分法。\par
+    设 $u$ ， $v$ 为 $x$ 的函数，且可导。则:
+    \begin{thm}[乘法求导法则形式一]
+    \begin{equation*}
+    (uv)^{'} = uv^{'} + vu^{'}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[乘法求导法则形式二]
+    \begin{equation*}
+    \frac{d}{dx}(uv) = v\frac{du}{dx} + u\frac{dv}{dx}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[两边同时取积分得]
+    \begin{equation*}
+    \int\frac{d}{dx}(uv) = \int v\frac{du}{dx} + \int u\frac{dv}{dx}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[移项得]
+    \begin{equation*}
+    \int u\frac{dv}{dx} = \int\frac{d}{dx}(uv) - \int v\frac{du}{dx}
+    \end{equation*}
+    \end{thm}
+
+    \begin{thm}[即]
+    \begin{equation*}
+    \int u \, dv = uv - \int v \, du
+    \end{equation*}
+    \end{thm}
+
+    \par 例： 求 $\int\: x\: \cos \! x\: dx$ 。
+    1. 首先选定： $u = x$ ， $dv = \cos \! x\: dx$
+    2. 由上可知： $du = dx$ ， $v = \sin \! x$
+    3. 综上可得：
+    \begin{equation*}
+    \begin{aligned}
+    \int\: x\: \cos \! x\: dx & = \int x \: d\sin \! x \\
+    & = x\sin \! x - \int\sin \! x \: dx \\
+    & = x\sin \! x + \cos \! x + C
+    \end{aligned}
+    \end{equation*}
+
+** 最优化问题
+*** $Talor$ 定理以及 $Lagrange$ 中值定理
+*** 拉格朗日乘数法
+*** 最小二乘法
+*** 梯度下降法
+*** 牛顿迭代法
+*** $LM$
+* 图表目录
+  #+BEGIN_LaTeX
+  \titlecontents{table}[4em]{}{\contentslabel{4.0em}}{}{\titlerule*[10pt]{$\cdot$}\contentspage}
+  \titlecontents{figure}[4em]{}{\contentslabel{4.0em}}{}{\titlerule*[10pt]{$\cdot$}\contentspage}
+  {\sc \listoftables}
+  {\sc \listoffigures}
+  #+END_LaTeX

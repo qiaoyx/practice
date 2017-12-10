@@ -1,0 +1,690 @@
+#+BEGIN_LaTex
+\lstset{
+  showspaces=false,
+  showtabs=false,
+  tabsize=4,
+  keywordstyle=\color{blue}\tt,
+  language=C++,
+  morekeywords={with, in, as},
+  numbers=none,
+  numberstyle=\small,
+  basicstyle=\tt,
+  directivestyle=\tt,
+  identifierstyle=\tt,
+  commentstyle=\tt,
+  stringstyle=\tt,
+  frameround=ffff,
+  frame=trBL,
+  framerule=1pt,
+  backgroundcolor=\color[rgb]{1, .98, .8},
+  % framexleftmargin=10mm,
+  % framexrightmargin=10mm,
+  % framextopmargin=5mm,
+  % framexbottommargin=5mm,
+  emph={join,open,listdir, write, import},
+  emphstyle=\underbar,
+  emph={[2]python,cd,mkdir,touch,sed,sudo, apt-get, cp, cmake, make, pip, git},
+  emphstyle={[2]\color{orange}}
+}
+#+END_LaTex
+* Document Settings                                                             :noexport:
+#+TITLE:   深度学习笔记
+#+INCLUDE: "report.org"
+#+AUTHOR:  乔宇轩
+
+#+OPTIONS: H:3 num:t toc:t \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:t todo:t pri:t tags:not-in-toc P:t
+#+OPTIONS: html-postamble:nil html-preamble:nil tex:t
+#+LaTeX_HEADER: \fancyhead[EC,OC]{\sc 深度学习笔记}
+#+LaTeX_HEADER: \setcounter{tocdepth}{2}
+* DeepLearning                                                                  :noexport:
+** VGGNet
+** Caffe SSD
+* Ubuntu Caffe SSD 环境配置步骤
+** Ubuntu系统安装以及配置
+   安装Ubuntu系统后，执行如下指令更新系统：
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   sudo apt-get install python2.7 python2.7-dev
+   sudo apt-get install python3.2 python3.2-dev
+   sudo apt-get install build-essential libssl-dev libevent-dev
+   sudo apt-get install libjpeg-dev libxml2-dev libxslt-dev
+   sudo apt-get install libleveldb-dev libsnappy-dev
+   sudo apt-get install libhdf5-serial-dev
+   sudo apt-get install libboost-all-dev libgflags-dev liblmdb-dev
+   sudo apt-get install libatlas-base-dev
+   sudo apt-get install glob gflags
+   sudo apt-get install make cmake
+   sudo apt-get install python-pip
+   sudo apt-get install git
+   \end{lstlisting}
+   #+END_LaTeX
+
+   #+ATTR_LaTex: :caption \caption{\sc Package介绍} :align r|l
+   |---------+-------------------------------------------------------------|
+   | Package | Description                                                 |
+   |---------+-------------------------------------------------------------|
+   | leveldb | Leveldb是一个google实现的非常高效的kv数据库                 |
+   | lmdb    | lmdb是openLDAP项目开发的嵌入式存储引擎，相比leveldb，读取的 |
+   |         | 效率更高，而且支持不同程序同时读取                          |
+   | hdf5    | 一种能高效存储和分发科学数据的新型数据格式                  |
+   | glob    | Google Glog 是一个C++语言的应用级日志记录框架，提供了 C++   |
+   |         | 风格的流操作和各种助手宏。                                  |
+   | gflags  | gflags是google的一个开源的处理命令行参数的库，使用c++开发， |
+   |         | 具备python接口                                              |
+   | atlas   | 同openBlas任选一，基础线性代数子程序库                      |
+   |---------+-------------------------------------------------------------|
+** Caffe SSD下载以及编译
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   git clone https://github.com/weiliu89/caffe.git
+   cd caffe
+   git checkout ssd
+   \end{lstlisting}
+   #+END_LaTeX
+   如果以python方式训练的话，至少需要安装以下python包
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   sudo pip install numpy scipy matplotlib scikit-image
+   \end{lstlisting}
+   #+END_LaTeX
+   我们以\$caffe_root来表示caffe主目录，下面是caffe编译的步骤：
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   cd $caffe_root
+   cp Makefile.config.example Makefile.config
+   cmake .
+   make -j16
+   make py
+   make test -j16
+   make runtest -j16
+   \end{lstlisting}
+   #+END_LaTeX
+*** opencv
+    首先下载opencv软件包，建议使用2.4版本，然后执行如下命令
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    tar xvf opencv-2.4.xx.tar.gz
+    cd opencv-2.4.xx
+    cmake . && make -j16
+    sudo make install
+    \end{lstlisting}
+    #+END_LaTeX
+    期间出现依赖包缺失的问题，请参考[[other_dependence][其他依赖项]]
+*** google protobuf
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    git clone https://github.com/google/protobuf.git
+    cd protobuf
+    ./configure
+    make -j16
+    make check
+    sudo make install
+    \end{lstlisting}
+    #+END_LaTeX
+    验证google protobuf是否安装成功：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    protoc --version
+    \end{lstlisting}
+    #+END_LaTeX
+    如果输出版本号，如"libprotoc 3.3.2"，则说明安装成功，否则出现
+    #+BEGIN_EXAMPLE
+    protoc: error while loading shared libraries: libprotocbuf.so.9:\
+            cannot open shared
+    #+END_EXAMPLE
+    则说明protobuf默认的安装路径不在系统库目录下，通常protobuf的默认安装路径为：/usr/local/lib，
+    做如下修改：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    cd /etc/ld.so.conf.d/
+    sudo touch protobuf.conf
+    \end{lstlisting}
+    #+END_LaTeX
+    在新创建的文件中加入"/usr/local/lib"，执行如下命令：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    sudo ldconfig
+    \end{lstlisting}
+    #+END_LaTeX
+    如要使用python进行训练，还需要进行以下步骤：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    cd protobuf/python
+    sudo python setup.py install --cpp_implementation
+    cd ../ && sudo make install
+    \end{lstlisting}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+*** 其他依赖项 <<other_dependence>>
+    缺失的依赖包都可以通过：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    sudo apt-get install [lib]any-package[-dev]
+    \end{lstlisting}
+    #+END_LaTeX
+    的方式进行安装，如果是python依赖包则可以：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    sudo pip install any-package
+    \end{lstlisting}
+    #+END_LaTeX
+    或者
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    sudo easy_install any-package
+    \end{lstlisting}
+    #+END_LaTeX
+* NVIDIA显卡驱动以及CUDA安装步骤
+** 显卡驱动安装
+   到 http://www.nvidia.com/Download/index.aspx?lang=en-us 查看自己显卡对应的驱动程序，如查到的
+   对应驱动程序版本为： nvidia-375
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   sudo add-apt-repository ppa:graphics-drivers/ppa
+   sudo apt-get update
+   sudo apt-get install nvidia-375
+   sudo apt-get install mesa-common-dev
+   sudo apt-get install freeglut3-dev
+   \end{lstlisting}
+   #+END_LaTeX
+   完成后重启系统，并打开"Software & Update"应用程序，选择"Additional Drivers"选项卡，或者直接打开
+   "Additional Drivers"应用程序，勾选刚刚安装的驱动程序。
+*** 显卡信息查看指令
+    使用以下任一种
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item lspci | grep -i vga
+    \item lspci -v -s 02:00.0
+    \item nvidia-smi
+    \item watch -n 10 nvidia-smi
+    \end{enumerate}
+    #+END_LaTeX
+** CUDA安装
+   CUDA是NVIDIA的编程语言平台，想使用GPU就必须要使用CUDA。 首先到
+   https://developer.nvidia.com/cuda-downloads 下载最新的CUDA版本，当前最新发行版本为CUDA8.0。
+   按照提示选择相应的版本，并选择runfile(local)方式下载。
+   #+BEGIN_LaTex
+   \begin{figure}[ht] \centering
+   \includegraphics[width=.92\linewidth]{./cuda.png}
+   \caption{\sf CUDA下载选项}
+   \end{figure}
+   #+END_LaTex
+
+   下载完成后，需要先关闭桌面系统， 关闭方式如下：
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   sudo service lightdm stop
+   \end{lstlisting}
+   #+END_LaTeX
+   之后进入命令行模式。也可以通过"Ctrl + Alt + Fn"的方式切换终端，而"Ctrl + Alt + F7"对应桌面终端，
+   其他为命令行模式。在任一命令行终端下执行
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   sudo sh cuda_8.0.61.2_linux.run
+   \end{lstlisting}
+   #+END_LaTeX
+   会显示一个长长的说明文档，如果对安装过程已经比较熟悉了，可以按"q"键直接跳过。然后的交互过程如下：
+   #+BEGIN_LaTeX
+   \begin{enumerate}
+   \item Do you accept the previously read EULA? [accept]
+   \item Install NVIDIA Accelerated Graphics Driver for Linux-x86\_64 375.26? [{\color{red}{no}}]
+   \item Install the CUDA 8.0 Toolkit? [yes]
+   \item ...
+   \end{enumerate}
+   #+END_LaTeX
+   其中\uline{要特别注意第2步}，因为我们已经安装了显卡驱动，这里就不再安装了。
+   如果选择安装会引起循环登录问题，
+   即桌面系统永远进不去了。需要完全卸载掉CUDA和所有显卡驱动并重新安装Ubuntu-desktop才可以修复循环
+   登录等问题。然后再重新按照之前的步骤安装显卡驱动程序和CUDA。安装完成后，需要修改环境变量，如下：
+   #+BEGIN_LaTeX
+   \begin{enumerate}
+   \item sudo vim /etc/profile
+   \item 末尾加入 "export PATH = /usr/local/cuda/bin:\$PATH"
+   \item sudo touch /etc/ld.so.conf.d/cuda.conf
+   \item 写入 "/usr/local/cuda/lib64"
+   \item 执行 "sudo ldconfig"
+   \end{enumerate}
+   #+END_LaTeX
+   测试CUDA安装是否成功，如下：
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   cd /usr/local/cuda-8.0/samples/1_Utilities/deviceQuery
+   make
+   sudo ./deviceQuery
+   \end{lstlisting}
+   #+END_LaTeX
+   如果显示一些GPU的信息，说明安装成功了。 \par
+   [[http://docs.nvidia.com/cuda/cuda-installation-guide-linux/#axzz4HIBXnwyt][CUDA TOOLKIT DOCUMENTATION]] 是CUDA工具包官方安装指南，遇到问题可以参考。
+* Caffe SSD 训练及应用
+** 训练公共数据集                                                               :noexport:ARCHIVE:
+   下载VGG_ILSVRC_16_layers_fc_reduced.caffemodel预训练模型，放到$caffe_root/models/VGGNet下。
+   下载公共数据集：
+   #+BEGIN_LaTeX
+   \begin{lstlisting}
+   cd $caffe_root/models/VGGNet
+   \end{lstlisting}
+   #+END_LaTeX
+** 训练自己数据集的步骤
+*** 数据分类及准备工作 <<prepare>>
+    首先将图片集分为训练集和测试集，比例为2:1 。
+    之后，在$data_root/VOCdevkit目录下分别创建训练数据目录和测试数据目录。
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    cd $data_root/VOCdevkit
+    mkdir mytrain mytest
+    \end{lstlisting}
+    #+END_LaTeX
+    在两个新创建的目录下分别创建如下几个目录： Annotations、 ImageSets、 JPEGImages
+    #+BEGIN_LaTeX
+    \begin{asparadesc}
+    \item[Annotations] 标注文件目录，格式为xml
+    \item[ImageSets] 配置文件
+    \item[JPEGImages] 图片目录，图片格式不一定是jpeg格式
+    \end{asparadesc}
+    #+END_LaTeX
+
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    cd $data_root/VOCdevkit/mytrain
+    mkdir Annotations ImageSets JPEGImages
+    cd $data_root/VOCdevkit/mytest
+    mkdir Annotations ImageSets JPEGImages
+    \end{lstlisting}
+    #+END_LaTeX
+    在每个ImageSets目录下创建如下目录： Action Layout Main Segmentation
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    cd $data_root/VOCdevkit/mytrain/ImageSets
+    mkdir Action Layout Main Segmentation
+    cd $data_root/VOCdevkit/mytest/ImageSets
+    mkdir Action Layout Main Segmentation
+    \end{lstlisting}
+    #+END_LaTeX
+
+    \indent 接下来要做的是生成几个重要的文件： trainval.txt、 test.txt，并放到对应的目录下。
+    trainval.txt、 test.txt分别是训练集和测试集的图片名称列表，内容如下所示：
+    #+BEGIN_LaTeX
+    \begin{center} \tiny
+    010465\\
+    023019\\
+    000345\\
+    000260\\
+    021864\\
+    020227\\
+    021742\\
+    000109\\
+    ...
+    \end{center}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+    每一行对应一张去掉扩展名的图片名称。 caffe的data组织方式是：可以支持多个数据集，每个数据集有自己单独的训练集和测试集划分。
+    此处，我们的用法是：分为两个数据集进行，分别对应训练集和测试集，因此后面我们还需要在mytrain数据集下指定一个空的测试集索引
+    文件test.txt，以及在mytest数据集下指定一个空的训练集索引文件trainval.txt。最后还要进行两个步骤：
+    #+BEGIN_LaTeX
+    \begin{enumerate}
+    \item 将上述的trainval.txt和一个空的test.txt分别放置在这几个目录：
+        \begin{enumerate}
+        \item \$data\_root/VOCdevkit/mytrain/ImageSets/Layout
+        \item \$data\_root/VOCdevkit/mytrain/ImageSets/Main
+        \item \$data\_root/VOCdevkit/mytrain/ImageSets/Segmentation
+        \end{enumerate}
+    \item 将上述的test.txt和一个空的trainval.txt分别放置在这几个目录：
+        \begin{enumerate}
+        \item \$data\_root/VOCdevkit/mytest/ImageSets/Layout
+        \item \$data\_root/VOCdevkit/mytest/ImageSets/Main
+        \item \$data\_root/VOCdevkit/mytest/ImageSets/Segmentation
+        \end{enumerate}
+    \end{enumerate}
+    #+END_LaTeX
+    至此，数据集准备完毕。
+*** caffe设置以及数据库创建
+**** 创建自己的配置目录
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     cd $caffe_root/
+     mkdir examples/mydataset data/mydataset
+     cd $caffe_root/data/VOC0712/
+     cp create_list.sh create_data.sh labelmap_voc.prototxt\
+        ../mydataset
+     \end{lstlisting}
+     #+END_LaTeX
+     examples/mydataset用于存放create_data.sh所生成的数据连接
+**** labelmap_xx.prototxt文件修改
+     \par 其中的分类数目是标注label数目加一，多出来的一个分类对应索引默认为 $0$ ，是caffe用来表示背景的。
+**** create_list.sh文件修改
+     \par 找到如下这行：
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     for name in VOC2007 VOC2012
+     do
+       if [[ $dataset == "test" && $name == "VOC2012" ]]
+       then
+       continue
+       fi
+       echo "Create list for $name $dataset..."
+     ...
+     \end{lstlisting}
+     #+END_LaTeX
+     修改为：
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     for name in mytrain mytest
+     do
+       if [[ $dataset == "test" && $name == "mytest" ]]
+       then
+       continue
+       fi
+       echo "Create list for $name $dataset..."
+     ...
+     \end{lstlisting}
+     #+END_LaTeX
+     这两个目录在[[prepare][准备工作]]中被创建
+**** create_data.sh文件修改
+     \par 修改dataset_name为mydataset
+**** 其他prototxt文件修改
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     cd $caffe_root/models/VGGNet/
+     mkdir mydataset
+     cp -r VOC0712/SSD_300x300 mydataset
+     \end{lstlisting}
+     #+END_LaTeX
+     我们将采用SSD300方式进行训练，所以创建SSD_300x300目录，并且是在VOC公共数据集训练
+     的基础上进行修改。修改所有.prototxt文件中的路径为前面步骤中创建的相应文件路径。
+     修改num_classes为labelmap文件中定义的分类个数。
+**** 创建自己的训练脚本ssd_pascal_mydataset.py
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     cd $caffe_root/examples/ssd
+     cp ssd_pascal.py ssd_pascal_mydataset.py
+     \end{lstlisting}
+     #+END_LaTeX
+
+     #+BEGIN_LaTeX
+     \begin{inparaenum}
+     \item 修改文件中所有的路径为前面步骤中创建的相应文件路径
+     \item 修改num\_classes为labelmap文件中定义的分类个数
+     \item 修改num\_test\_image为测试集图像的数据，我们当前为1280张测试图片
+     \item 设置stepvalue数组，如[10000, 20000, 50000, 100000, 120000]，用于指定学习率调整策略
+     \item 修改最大训练迭代次数max\_iter为想要的训练迭代次数上限，如200000次
+     \item 修改snapshot参数，指定在何时生成快照
+     \item 修改test\_interval参数，指定每训练迭代多少次时进行一次测试，如1000
+     \end{inparaenum}
+     #+END_LaTeX
+**** 开始训练
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     cd $caffe_root
+     python examples/ssd/ssd_pascal_mydataset.py
+     漫长的挂机等待 ...
+     \end{lstlisting}
+     #+END_LaTeX
+** 使用训练得到的模型进行分类
+   #+BEGIN_LaTeX
+   \begin{enumerate}
+   \item 自己生成待分类图片列表txt文件，每张图片一行
+   \item 修改deploy.prototxt的save\_output\_param内容
+   \item build/examples/ssd/ssd\_detect.bin
+   \item examples/ssd/plot\_detections.py
+   \end{enumerate}
+   #+END_LaTeX
+*** 生成目标图片列表
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    import os
+    import sys
+
+    image_dir = u"$caffe_home/data/VOCdevkit/myverify/JPEGImages/"
+    images = os.listdir(image_dir)
+
+    with open(u"./images.txt", "w") as f:
+        for im in images:
+            path = os.path.join(image_dir, im)
+            f.write(path)
+            f.write('\n')
+    \end{lstlisting}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+
+    生成的文件images.txt内容如下：
+    #+BEGIN_LaTeX \tiny
+    \begin{lstlisting}
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/022773.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/000315.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/041321.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/022298.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/040148.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/040732.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/021219.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/021609.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/021202.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/022322.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/020499.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/000257.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/021821.bmp
+    $caffe_root/data/VOCdevkit/myverify/JPEGImages/021145.bmp
+    ...
+    \end{lstlisting}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+*** 修改deploy.prototxt
+    打开deploy.prototxt文件，并定位到最后一个layer：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    layer {
+        name: "detection_out"
+        type: "DetectionOutput"
+        bottom: "mbox_loc"
+        bottom: "mbox_conf_flatten"
+        bottom: "mbox_priorbox"
+        top: "detection_out"
+        include {
+            phase: TEST
+        }
+        detection_output_param {
+            num_classes: 2
+            share_location: true
+            background_label_id: 0
+            nms_param {
+            nms_threshold: 0.449999988079
+            top_k: 400
+        }
+        save_output_param {
+            output_directory: "/home/deeplearning/result"
+            output_name_prefix: "comp4_det_test_"
+            label_map_file: "data/mydataset/labelmap_my.prototxt"
+            name_size_file: "data/mydataset/test_name_size.txt"
+            num_test_image: 1280
+        }
+        code_type: CENTER_SIZE
+        keep_top_k: 200
+        confidence_threshold: 0.00999999977648
+    }
+    \end{lstlisting}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+
+    删除save_output_param这一节，后续我们将以参数的形式来指定者部分参数：
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    layer {
+        name: "detection_out"
+        type: "DetectionOutput"
+        bottom: "mbox_loc"
+        bottom: "mbox_conf_flatten"
+        bottom: "mbox_priorbox"
+        top: "detection_out"
+        include {
+            phase: TEST
+        }
+        detection_output_param {
+            num_classes: 2
+            share_location: true
+            background_label_id: 0
+            nms_param {
+            nms_threshold: 0.449999988079
+            top_k: 400
+        }
+        code_type: CENTER_SIZE
+        keep_top_k: 200
+        confidence_threshold: 0.00999999977648
+    }
+    \end{lstlisting}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+*** 使用已有模型进行分类
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    cd $caffe_home
+    build/examples/ssd/ssd_detect.bin\
+    models/VGGNet/mydataset/SSD_300x300/check_deploy.prototxt\
+    models/VGGNet/mydataset/SSD_300x300/\
+    VGG_MYDATASET_SSD_300x300_iter_200000.caffemodel\
+    images.txt --file_type image --out_file output.txt\
+    --confidence_threshold 0.4
+    \end{lstlisting}
+    #+END_LaTeX
+    生成的文件output.txt内容如下：
+    #+BEGIN_LaTeX \tiny
+    \begin{lstlisting}
+    022773.bmp 1 0.993896  13  26  86 274
+    000315.bmp 1 0.999999 201  79 272 159
+    041321.bmp 1 0.849802 100  18 142 273
+    022298.bmp 1 0.999996 167  70 266 159
+    040148.bmp 1 0.967397  90  75 138 191
+    040732.bmp 1 0.999813  48  12 142 293
+    021219.bmp 1 0.997167  34  69  91 163
+    021609.bmp 1 0.999745  82  67 132 133
+    021202.bmp 1 0.999105 183 158 236 244
+    022322.bmp 1 0.999858 172 108 284 240
+    000257.bmp 1 0.860054 217  73 262 126
+    000257.bmp 1 0.493137 231  89 259 125
+    021821.bmp 1 0.999965  86  68 150 161
+    021145.bmp 1 0.999995 168 100 233 280
+    040168.bmp 1 1         38  90 124 252
+    021652.bmp 1 0.994586 176  61 212 108
+    ...
+    \end{lstlisting}
+    #+END_LaTeX
+    #+LaTex:\clearpage
+*** 对已分类完成的图片进行可视化处理
+    #+BEGIN_LaTeX
+    \begin{lstlisting}
+    sed "s/\$caffe_home\/data\/VOCdevkit\/myverify\/JPEGImages\///g"\
+    output.txt > output.txt
+
+    python examples/ssd/plot_detections.py output.txt\
+           $caffe_root/data/VOCdevkit/myverify/JPEGImages/\
+           --labelmap-file data/mydataset/labelmap_my.prototxt\
+           --save-dir ../result/
+    \end{lstlisting}
+    #+END_LaTeX
+    到结果目录种查看可视化图片，如下图所示：
+    #+BEGIN_LaTex
+    \begin{figure}[ht] \centering
+    \includegraphics[width=.49\linewidth]{./1.png}
+    \includegraphics[width=.5\linewidth]{./2.png}
+    \caption{\sf 分类结果展示}
+    \end{figure}
+    #+END_LaTex
+    #+LaTex:\clearpage
+*** 分类结果分析
+    当前训练存在样本数量少，样本多样化不足等问题，比如大部份指针位于仪表左半部分区域。后续需要逐步扩充样本库，但不建议PS，
+    很容易导致将负样本强制变成正样本。训练中，由于图片中其他相似特征引起误识别的情况较多，尤其是文字中的"/"符号，极其容易
+    识别为指针，可以考虑增加分类。将具有明显特征的负样本设置到其他分类中进行训练。
+    #+BEGIN_LaTex
+    \begin{figure}[ht] \centering
+    \includegraphics[width=.5\linewidth]{./3.png}
+    \caption{\sf 将"/"识别为指针}
+    \end{figure}
+    #+END_LaTex
+**** 训练20万次，大于7天。mAP峰值 $\geq$ 90\%
+**** 训练集2560张图片,测试集1280张图片,验证集1280张图片
+**** 测试集mAP＝87\%,验证集准确率 > 90\%
+**** \uline{对多指针、图片糢糊、浅色以及人眼不易分辨的指针分类效果很好}
+**** 存在同一指针有多个识别结果的情况
+**** 存在多种误识别的情况
+**** 识别的区域受到feature map cell固定长宽比限制，不能直接用于计算仪表读数
+*** 从验证集数据库文件                                                          :noexport:ARCHIVE:
+    使用 \$caffe_root/build/tools/compute_image_mean 工具，从lmdb/leveldb数据库文件生成对应的
+    binaryproto均值文件。
+    #+BEGIN_LaTeX
+    \begin{lstlisting}[title={\bf\sf make\_imagenet\_mean.sh}]
+    #!/usr/bin/env sh
+    # Compute the mean image from the imagenet training lmdb
+    # N.B. this is available in data/ilsvrc12
+
+    EXAMPLE=examples/imagenet
+    DATA=data/ilsvrc12
+    TOOLS=build/tools
+
+    $TOOLS/compute_image_mean $EXAMPLE/ilsvrc12_train_lmdb \
+    $DATA/imagenet_mean.binaryproto
+
+    echo "Done."
+    \end{lstlisting}
+    #+END_LaTeX
+
+*** 转换均值文件格式                                                            :noexport:ARCHIVE:
+    如果使用python方式进行分类，需要将均值文件转换为numpy格式，扩展名为：npy
+
+    使用caffemodel进行分类
+
+** Snapshot处理
+   有几种情况下Snapshot具有重要意义：
+   #+BEGIN_LaTeX
+   \begin{inparaenum}
+   \item 训练过程中断后，能够由Snapshot继续训练，避免再从头开始;
+   \item 在预定的训练次数上限内，未达到训练目的，需要在此基础上继续训练;
+   \item 训练的最优结果有可能是中间的某个节点，训练次数多不代表效果好。
+   \end{inparaenum}
+   #+END_LaTeX
+   Snapshot的生成策略有几种方式：
+   #+BEGIN_LaTeX
+   \begin{enumerate}
+   \item 在训练结束或者强行中断时，自动生成当前训练迭代次数的caffemodel和solve参数;
+   \item 在训练脚本中(ssd\_pascal[\_xx].py)，由snapshot参数指定。
+   \end{enumerate}
+   #+END_LaTeX
+   \par 如果不想在上次的训练基础上继续训练，而是从头开始训练，需要修改训练脚本中的resume_training参数为False。否则，
+   想要在最近一次训练的基础上继续训练，需要将resume_training参数设置为True。训练过程中，会自动在$caffe_root/jobs的
+   对应目录下生成一些文件，如果不是需要重头开始训练，不要删除和修改这里的任何文件。
+
+** Caffe模型修改方法及步骤                                                      :noexport:
+* FAQ
+** Configure                                                                    :noexport:ARCHIVE:
+*** cuda loop login <<cuda_loop_login>>
+** Training
+*** gradient explode
+    梯度爆炸是由于loss函数计算的结果超出了单精度浮点数的表示范围，从而出现打印：loss=nan。
+    通常有以下几种解决方法：
+**** 降低学习率
+     通过调整base_lr,可尝试降低一个数量级
+**** 为每层设置BN层
+     修改开始训练执行的文件，比如： ssd_pascal.py ， 找到如下内容：
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     # If true, use batch norm for all newly added layers.
+     # Currently only the non batch norm version has been tested.
+     use_batchnorm = False
+     \end{lstlisting}
+     #+END_LaTeX
+     修改为：
+     #+BEGIN_LaTeX
+     \begin{lstlisting}
+     use_batchnorm = True
+     \end{lstlisting}
+     #+END_LaTeX
+     经过正则化后，loss的结果值范围得到了有效的抑制，这是目前最有效的解决梯度爆炸的方法。
+**** 使用Sigmoid激活函数
+     caffe ssd默认使用ReLU激活函数，可以修改为Sigmoid激活函数，但训练过程要慢一些，因为Sigmoid求导过程要复杂一些。
+*** gradient vashning
+**** 使用ReLU激活函数
+* 图表目录
+  #+BEGIN_LaTeX
+  \titlecontents{table}[4em]{}{\contentslabel{4.0em}}{}{\titlerule*[10pt]{$\cdot$}\contentspage}
+  \titlecontents{figure}[4em]{}{\contentslabel{4.0em}}{}{\titlerule*[10pt]{$\cdot$}\contentspage}
+  {\sc \listoftables}
+  {\sc \listoffigures}
+  #+END_LaTeX

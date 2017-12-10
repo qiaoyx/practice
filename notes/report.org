@@ -1,0 +1,74 @@
+#+EMAIL: qiaoyx@hotmail.com
+#+STARTUP: overview hideblocks align indent hidestars
+
+#+CREATOR: SomeWhere
+#+HTML_CONTAINER: div
+#+HTML_DOCTYPE: xhtml-strict
+
+#+LATEX_CLASS: report
+#+LATEX_CLASS_OPTIONS: [colorlinks,linkcolor=blue,adobefonts,11.5pt,urlcolor=blue,letterpaper]
+#+LATEX_HEADER: \usepackage[svgnames]{xcolor}
+#+LATEX_HEADER: \usepackage{amsmath,amssymb,textcomp,picinpar}
+#+LATEX_HEADER: \usepackage{gloss,glossaries}
+#+LATEX_HEADER: \usepackage[timestamp]{draftcopy}
+#+LATEX_HEADER: \usepackage[margin=24mm]{geometry}
+#+LATEX_HEADER: \usepackage{listings,lettrine,booktabs}
+#+LATEX_HEADER: \usepackage[BoldFont,SlantFont,CJKchecksingle]{xeCJK}
+#+LATEX_HEADER: \usepackage{titlesec,titletoc,ulem,fontspec,inputenc,fontenc,indentfirst}
+#+LATEX_HEADER: \usepackage{tabularx,multirow,multicol,longtable,threeparttable,tabu,colortbl,dcolumn}
+#+LATEX_HEADER: \usepackage[justification=centering,textfont=sc,labelsep=quad]{caption}
+#+LATEX_HEADER: \setmainfont{Lucida Std Roman}
+#+LATEX_HEADER: %\setmonofont{Lucida Typewriter Std}
+#+LATEX_HEADER: \setsansfont{Lucida Sans Std Roman}
+#+LATEX_HEADER: %\setmainfont{Times New Roman}
+#+LATEX_HEADER: \setmonofont{Source Code Pro}
+#+LATEX_HEADER: %\setsansfont{New Century Schoolbook LT Std}
+#+LATEX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std}]{Adobe Song Std}
+#+LATEX_HEADER: \setCJKmonofont{Adobe Heiti Std}
+#+LATEX_HEADER: \setCJKsansfont{Adobe Fangsong Std}
+#+LATEX_HEADER: \newcommand{\qyxreserve}[1]{\makebox[0pt][l]{\scalebox{1}[1]{#1}} \raisebox{-1.2mm}{\scalebox{1}[-1]{\color[gray]{0.7}{#1}}}}
+
+#+LaTeX_HEADER: \linespread{1.0609}
+
+#+LATEX_HEADER: \usepackage[toc,lot,lof]{multitoc}
+#+LATEX_HEADER: %\titlecontents{chapter}[4em]{\addvspace{2.3em}\bf}{\contentslabel{4.0em}}{}{\titlerule*[5pt]{$\cdot$}\contentspage}
+#+LATEX_HEADER: %\titlecontents{section}[4em]{}{\contentslabel{4.0em}}{}{\titlerule*[5pt]{$\cdot$}\contentspage}
+#+LATEX_HEADER: \titlecontents{subsection}[4em]{}{\contentslabel{4.0em}}{}{\titlerule*[5pt]{$\cdot$}\contentspage}
+#+LATEX_HEADER: %\columnsep=20pt
+
+#+LaTeX_HEADER: \renewcommand{\figurename}{图} \renewcommand{\tablename}{表} \renewcommand{\contentsname}{目录}
+#+LaTeX_HEADER: \renewcommand{\abstractname}{摘要} \renewcommand{\listfigurename}{插图目录} \renewcommand{\listtablename}{表格目录}
+#+LaTeX_HEADER: \renewcommand{\bibname}{参考文献}
+#+LaTeX_HEADER: \renewcommand{\baselinestretch}{1.4}
+#+LaTeX_HEADER: \setlength{\parindent}{2.04em}
+#+LaTeX_HEADER: \setcounter{tocdepth}{2}
+#+LaTeX_HEADER: \setcounter{secnumdepth}{2}
+
+#+LaTeX_HEADER: \usepackage{paralist,mdwlist}
+#+LaTeX_HEADER: \usepackage{fancyhdr,fancybox,lastpage}
+#+LaTeX_HEADER: \makeatletter % 页眉和页脚
+#+LaTeX_HEADER: \newif \if@frontmatter   \@frontmatterfalse
+#+LaTeX_HEADER: \let \LaTeXfrontmatter = \frontmatter
+#+LaTeX_HEADER: \pagestyle{fancy} \fancyhf{}
+%#+LaTeX_HEADER: \fancyhead[EL,OL]{\includegraphics[height=8mm]{./images/logo.png}}
+#+LaTeX_HEADER: \fancyhead[EL,OL]{\LaTeX}
+#+LaTeX_HEADER: \fancyhead[ER,OR]{\sc {\color{red} 内部公开}}
+#+LaTeX_HEADER: \fancyfoot{}
+#+LaTeX_HEADER: \fancyfoot[R]{\sc \small 第\thepage$\slash$\pageref{LastPage}页}
+#+LaTeX_HEADER: \fancyfoot[L]{\sc \small 知识产权属XX所有}
+#+LaTeX_HEADER: \renewcommand\headrule{\color{gray} \hrule height 2pt width\headwidth
+#+LaTeX_HEADER:   \vspace{1pt}
+#+LaTeX_HEADER:   \hrule height 1pt width\headwidth \vspace{-4pt}}
+#+LaTeX_HEADER: \renewcommand{\footrulewidth}{0.4pt}
+#+LaTeX_HEADER: \fancypagestyle{plain}{\pagestyle{fancy}}
+#+LaTeX_HEADER: \makeatother
+
+#+LaTeX_HEADER: \titleformat{\chapter}{\centering\Huge\bf}{第{\thechapter}章}{1em}{}
+#+LaTeX_HEADER: \titlespacing{\chapter}{0pt}{-20pt}{25pt}
+
+#+HTML_HEAD: <link rel="stylesheet" title="Standard" href="http://orgmode.org/worg/style/worg.css" type="text/css" />
+#+HTML_HEAD: <link rel="alternate stylesheet" title="Zenburn" href="http://orgmode.org/worg/style/worg-zenburn.css" type="text/css" />
+#+HTML_HEAD: <link rel="alternate stylesheet" title="Classic" href="http://orgmode.org/worg/style/worg-classic.css" type="text/css" />
+#+HTML_HEAD_EXTRA: <link rel="SHORTCUT ICON" href="http://orgmode.org/org-mode-unicorn.ico" type="image/x-icon" />
+#+HTML_HEAD_EXTRA: <link rel="icon" href="/org-mode-unicorn.ico" type="image/ico" />
+#+HTML_HEAD: <script type="text/javascript" src="http://orgmode.org/mathjax/MathJax.js"></script>

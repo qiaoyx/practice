@@ -1,0 +1,735 @@
+\documentclass[utf-8,xcolor=dvips,slidestop,compress,mathserif]{beamer}
+\usepackage{wallpaper}
+\usepackage{amsmath,amssymb,textcomp,picinpar}
+%\usepackage{euler}
+\usepackage{xeCJK}
+\usepackage{listings}
+\usepackage{pifont}
+\usepackage{tabularx,multirow,multicol,longtable,threeparttable,tabu,colortbl,dcolumn,booktabs}
+\usepackage{fontspec}
+
+%\setmainfont{Lucida Std Roman}
+%\setsansfont{Lucida Sans Std Roman}
+%\setmonofont{Source Code Pro}
+\setmainfont{Adobe Song Std}
+\setCJKmainfont[BoldFont={Adobe Heiti Std}]{Adobe Song Std}
+\setCJKmonofont{Adobe Heiti Std}
+\setCJKsansfont{Adobe Fangsong Std}
+\usepackage[math]{anttor}
+
+\mode<presentation> {
+  \usetheme{Copenhagen}
+  \useoutertheme{infolines}
+  %\useinnertheme{rectangles}
+  %\usecolortheme[named=SeaGreen]{structure}
+  %\usecolortheme{lily}
+  \usecolortheme{orchid}
+  \setbeamercovered{transparent}
+  \beamertemplatenavigationsymbolsempty
+}
+
+\newcommand{\qyxreserve}[2]{ % 倒影效果
+  \makebox[0pt][l]{
+    \scalebox{1}[1]{#2}}
+  \raisebox{#1}{\scalebox{1}[-1]{\color[gray]{0.6}{#2}}}
+}
+
+\title[{\fontsize{18}{12}{R}}{\fontsize{12}{12}{PROJECTIVE}}]{\bf Projective Geometry}
+\subtitle{\textbf{\textsc{射影映射的几何基础}}}
+\institute[SomeWhere]{SomeWhere}
+\author{{\fontspec{New Century Schoolbook LT Std} qiaoyx}}
+\date{\tiny 2017-06-09}
+\logo{\includegraphics[width=10mm]{./images/logo.png}}
+\begin{document}
+\frame{
+  \begin{center}
+    \includegraphics[width=\textwidth, height=.42\textheight]{./images/bg_tansform.png}
+  \end{center}
+  \titlepage
+}
+
+\lstset{
+  showspaces=false,
+  showtabs=false,
+  tabsize=4,
+  keywordstyle=\color{blue}\tt,
+  language=python,
+  numbers=left,
+  numberstyle=\small,
+  basicstyle=\tt,
+  identifierstyle=\tt,
+  commentstyle=\tt,
+  stringstyle=\tt,
+  frameround=fttt,
+  frame=trBL,
+  framerule=1pt
+}
+\setbeamercolor{mycolor}{fg=black,bg=pink}
+\setbeamercolor{mycolor1}{fg=black,bg=orange}
+\section{射影变换}
+\subsection{射影变换的链式分解}
+\frame {\frametitle {射影变换的链式分解} \transcover<1>
+  \framesubtitle{\sc 射影变换研究的是在射影变换群下不变的性质}
+  \begin{block}{\centerline{射影变换的链式分解*}}
+    \begin{equation*}
+      \begin{split}
+        \mathtt{H} = & \mathtt{H}_S \mathtt{H}_A \mathtt{H}_P
+        \\ = &
+      \begin{bmatrix}
+        s\mathtt{R} & t/v \\
+        0^{\top} & 1
+      \end{bmatrix}
+      \begin{bmatrix}
+        \mathtt{K} & 0 \\
+        0^{\top} & 1
+      \end{bmatrix}
+      \begin{bmatrix}
+        \mathbf{\mathtt{I}} & 0 \\
+        \mathtt{v}^{\top} & v
+      \end{bmatrix}
+      \\ = &
+      \begin{bmatrix}
+        \mathtt{A} & t \\
+        \mathtt{v}^{\top}  & v
+      \end{bmatrix}
+    \end{split}
+  \end{equation*}
+\end{block}
+
+\begin{itemize}[<+-|alert@+>]
+\item 其中 $\mathtt{A} = s\mathtt{RK} + tv^{\top}$, $v^{\top}$ 用于消除透视失真
+\item $\mathtt{K}$ 为 $det\mathtt{K} = 1$ 的上三角矩阵，是摄像机标定的目标
+\item 当 $v \neq 0$ 时上述分解成立，而当 $s$ 取正值时分解唯一
+\end{itemize}
+}
+
+\subsection{几何基元}
+\subsubsection{二维几何基元}
+\frame {\frametitle{\bf{2D直线}}  \transboxin<1>
+  \begin{columns}[t]
+    \begin{column}{.48\linewidth}
+      \begin{block}<1->{\center{平面上直线方程}}
+        \center{$ax+by+c=0$}
+      \end{block}
+    \end{column}
+    \begin{column}{.48\linewidth}
+      \begin{block}<2->{\center{直线的向量表示}}
+        \center{$(a,b,c)^{\top}$}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{3mm}
+  \center{直线与矢量$(a,b,c)^{\top}$不是一一对应的，因为对任何非零常数$k$有：}
+  \begin{exampleblock}<3->{\center{等价直线方程与向量}}
+    \begin{columns}[t]
+      \begin{column}{50mm}
+        \begin{enumerate}
+        \item $ax+by+c=0$
+        \item $(a,b,c)^{\top}$
+        \end{enumerate}
+      \end{column}
+      \begin{column}{50mm}
+        \begin{enumerate}
+        \item $(ka)x+(kb)y+(kc)=0$
+        \item $k(a,b,c)^{\top}$
+        \end{enumerate}
+      \end{column}
+    \end{columns}
+  \end{exampleblock}
+  \vspace{3mm}
+  这种等价关系下的向量等价类称为齐次矢量。在$\mathbb{R}^{3}-(0,0,0)^{\top}$中的向量等价类的集合组成射影空间
+  $\mathbb{P}^{2}$。
+}
+
+\frame {\frametitle{\bf{2D点与直线的关系*}} \transdissolve<1>
+  点
+  \hspace{2pt}\raisebox{-.5mm}{\begin{beamercolorbox}[rounded=true,shadow=false,wd=20mm,center,colsep=-2pt]{mycolor1}
+      $x=(x,y)^{\top}$
+    \end{beamercolorbox}}\hspace{3pt}
+  在直线
+  \hspace{2pt}\raisebox{-.5mm}{\begin{beamercolorbox}[rounded=true,shadow=false,wd=26mm,center,colsep=-2pt]{mycolor1}
+      $l=(a,b,c)^{\top}$
+    \end{beamercolorbox}}\hspace{3pt}
+  上的充要条件是
+  \hspace{2pt}\raisebox{-.5mm}{\begin{beamercolorbox}[rounded=true,shadow=false,wd=30mm,center,colsep=-2pt]{mycolor1}
+      $ax+by+c=0$
+    \end{beamercolorbox}}\hspace{3pt}
+  ,表示为向量内积的形式为：\\
+  \centerline{
+    \begin{beamercolorbox}[rounded=true,shadow=true,wd=55mm,center]{mycolor}
+      $(x,y,1)(a,b,c)^{\top}=(x,y,1)l=0$
+    \end{beamercolorbox}
+  }
+  同样，点在$\mathbb{P}^{2}$下的齐次表示形式
+  \hspace{2pt}\raisebox{-.5mm}{\begin{beamercolorbox}[rounded=true,shadow=false,wd=30mm,center,colsep=-2pt]{mycolor1}
+      $x=(x_{1},x_{2},x_{3})^{\top}$
+    \end{beamercolorbox}}\hspace{3pt}
+  等同于$\mathbb{R}^{2}$中的点
+  \hspace{2pt}\raisebox{-.5mm}{\begin{beamercolorbox}[rounded=true,shadow=false,wd=34mm,center,colsep=-2pt]{mycolor1}
+      $x=(x_{1}/x_{3},x_{2}/x_{3})^{\top}$
+    \end{beamercolorbox}}\hspace{3pt}
+  。 综上，有以下结论：
+
+  \center{
+    \begin{enumerate}[<+-|alert@+>]
+    \item \begin{beamercolorbox}[rounded=true,shadow=true,wd=.7\linewidth,center]{mycolor}
+        \makebox[.56\linewidth][c]{点$x$在直线$l$上的充要条件是$x^{\top}l=0$}
+      \end{beamercolorbox}
+    \item \begin{beamercolorbox}[rounded=true,shadow=true,wd=.7\linewidth,center]{mycolor}
+        \makebox[.56\linewidth][c]{两直线$l$和$l^{\top}$的交点是$x=l\times l^{\top}$}
+      \end{beamercolorbox}
+    \item \begin{beamercolorbox}[rounded=true,shadow=true,wd=.7\linewidth,center]{mycolor}
+        \makebox[.56\linewidth][c]{过两点$x$和$x^{\top}$的直线是$l=x\times x^{\top}$}
+      \end{beamercolorbox}
+    \end{enumerate}
+  }
+}
+
+\subsubsection{三维几何基元}
+\frame { \transboxin<1> \frametitle{\bf 三维几何基元介绍}
+  \frametitle{\hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[rounded=true,shadow=false,wd=6mm,center,colsep=-2pt]{mycolor1}
+        $\mathbb{P}^{3}$
+      \end{beamercolorbox}}\hspace{1pt}
+    中点和平面对偶。}
+
+  \begin{columns}[t]
+    \begin{column}{.48\linewidth}
+      \begin{block}<1->{\centerline{平面方程}}
+        \centerline{$\pi_{1}X + \pi_{2}Y + \pi_{3}Z + \pi_{4} = 0$}
+      \end{block}
+      \begin{block}<2->{\centerline{平面的齐次表示}}
+        \centerline{$\pi=(\pi_{1}, \pi_{2}, \pi_{3}, \pi_{4})^{\top}$}
+      \end{block}
+      \begin{block}<3->{\centerline{点的表示形式}}
+        \centerline{
+          \begin{beamercolorbox}[rounded=true,shadow=true,wd=.88\linewidth,center]{mycolor}
+          \begin{equation*}
+            \begin{split}
+              x= & (x,y,z,1)^{\top} \\
+              =  & x_{4}(x_{1}/x_{4},x_{2}/x_{4},x_{3}/x_{4},1)^{\top} \\
+              =  & (x_{1},x_{2},x_{3},x_{4})^{\top} \text{其中}x_{4}\neq 0
+            \end{split}
+          \end{equation*}
+          \end{beamercolorbox}
+        }
+      \end{block}
+    \end{column}
+    \begin{column}{.48\linewidth}
+      \begin{block}<4->{\centerline{点与平面的关系}}
+        \begin{enumerate}
+        \item 点在平面上
+          \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+              rounded=true,shadow=false,wd=16mm,center,colsep=-2pt]{mycolor1}
+              $\pi^{\top}\mathtt{X}=0$
+            \end{beamercolorbox}}
+        \item 三点确定一张平面 \\
+          \vspace{-2mm}
+            \begin{eqnarray*}\vspace{-2mm}
+              \begin{bmatrix}
+                \mathtt{X}_{1}^{\top} \\ \mathtt{X}_{2}^{\top} \\ \mathtt{X}_{3}^{\top}
+              \end{bmatrix}
+              \pi = 0
+            \end{eqnarray*}
+          \item 三平面确定一点 \\
+            \vspace{-2mm}
+            \begin{eqnarray*}\vspace{-2mm}
+              \begin{bmatrix}
+                \mathtt{\pi}_{1}^{\top} \\ \mathtt{\pi}_{2}^{\top} \\ \mathtt{\pi}_{3}^{\top}
+              \end{bmatrix}
+              \mathtt{X} = 0
+            \end{eqnarray*}
+        \end{enumerate}
+      \end{block}
+    \end{column}
+  \end{columns}
+}
+
+\frame {\frametitle{\bf{3D直线}} \transdissolve<1>
+  \begin{block}{\centerline{3D直线方程}}
+    \centerline{$r=(1-\lambda)p + \lambda q$}
+  \end{block}
+  \begin{block}{\centerline{3D直线方程齐次坐标表示}}
+    \centerline{$r=\mu \widetilde{p} + \lambda \widetilde{q}$}
+  \end{block}
+  \begin{block}{\centerline{3D直线Pl\textdoublevbaraccent{u}cker坐标表示}}
+    \centerline{$L=\widetilde{p}\widetilde{q}^{\top}-\widetilde{q}\widetilde{p}^{\top}$}
+  \end{block}
+}
+
+\subsection{对偶}
+\subsubsection{对偶性质}
+\frame {  \transboxin<1>
+  \begin{block}{\center{\bf 对偶原理}}
+    \begin{center}
+      二维射影几何中任何定理都有一个对应的对偶定理，它可以通过互换原定理中点和线的作用而导出。
+    \end{center}
+  \end{block}
+  \begin{enumerate}
+  \item $\mathbb{P}^{2}$ 对偶的条件* [$\mathbb{P}^{2}\sim\mathbb{R}^{3}-(0,0,0)$]
+    \begin{enumerate}
+    \item 点和直线的齐次坐标表示形式一致
+    \item 两相异点唯一确定一条直线
+    \item 两相异直线唯一确定一个点，即交点
+      \footnote{\it 该条件在$\mathbb{R}^{2}$中不成立，如平行线不相交,交点无定义}
+    \end{enumerate}
+  \item $\mathbb{P}^{3}$ 对偶的条件 [$\mathbb{P}^{3}\sim\mathbb{R}^{4}-(0,0,0,0)$]
+    \begin{enumerate}
+    \item 点和平面的齐次坐标表示形式一致
+    \item 三个非共线点唯一确定一个平面
+    \item 三个相异平面唯一确定一个点，即交点
+      \footnote{\it 该条件在$\mathbb{R}^{3}$中不成立，如平行平面不相交}
+    \end{enumerate}
+  \end{enumerate}
+}
+\subsection{射影变换的层次}
+\subsubsection{二维射影变换}
+\frame{  \transboxin<1>
+  \begin{table}[htbp]
+    \label{tab:guiperformance}
+    \caption{ $\mathbb{P}^{2}$ 变换几何不变性质} \centering
+    \begin{threeparttable}[b]
+      \begin{tabular}{rlll} \toprule[1pt]
+        \bf{变换群} & \bf{矩阵形式} & \bf{自由度} & \bf{重要不变性质} \\ \midrule
+        \textbf{欧氏} &
+                        $ \begin{bmatrix}
+                          \enskip R_{2\times 2} & t_{2\times 1} \\
+                          0^{\top} & 1
+                        \end{bmatrix} $ \smallskip
+                                    & 3 & 长度、面积 \\
+        \textbf{相似*} &
+                        $ \begin{bmatrix}
+                          sR_{2\times 2} & t_{2\times 1} \\
+                          0^{\top} & 1
+                        \end{bmatrix} $ \smallskip
+                                    & 4 & 夹角\footnote{单视图中最重要的度量性质}、虚圆点 \\
+        \textbf{仿射*} &
+                        $ \begin{bmatrix}
+                          \enskip A_{2\times 2} & t_{2\times 1} \\
+                          0^{\top} & 1
+                        \end{bmatrix} $ \smallskip
+                                    & 6 & 无穷远线 $l_{\infty}$  \\
+        \textbf{射影} &
+                        $ \begin{bmatrix}
+                          \, A_{2\times 2} & t_{2\times 1} \\
+                          f_{2\times 1}^{\top}  & w_{1\times 1}
+                        \end{bmatrix} $
+                                    & 8 & 交比 \\
+        \bottomrule[1pt]
+      \end{tabular}
+      \begin{tablenotes}
+      \item[1] R为正交矩阵
+      \item[2] A为可逆矩阵，不要求正交
+      \end{tablenotes}
+    \end{threeparttable}
+  \end{table}
+}
+\subsubsection{三维射影变换}
+\frame{  \transdissolve<1>
+  \begin{table}[htbp]
+    \label{tab:guiperformance}
+    \caption{ $\mathbb{P}^{3}$ 变换几何不变性质} \centering
+    \begin{threeparttable}[b]
+      \begin{tabular}{rlll} \toprule[1pt]
+        \bf{变换群} & \bf{矩阵形式} & \bf{自由度} & \bf{重要不变性质} \\ \midrule
+        \textbf{欧氏} &
+                        $ \begin{bmatrix}
+                          \enskip R_{2\times 2} & t_{2\times 1} \\
+                          0^{\top} & 1
+                        \end{bmatrix} $ \smallskip
+                                    & 6 & 体积 \\
+        \textbf{相似} &
+                        $ \begin{bmatrix}
+                          sR_{2\times 2} & t_{2\times 1} \\
+                          0^{\top} & 1
+                        \end{bmatrix} $ \smallskip
+                                    & 7 & 绝对二次曲线\footnote{具有类似平面量角器的功能} \\
+        \textbf{仿射} &
+                        $ \begin{bmatrix}
+                          \enskip A_{2\times 2} & t_{2\times 1} \\
+                          0^{\top} & 1
+                        \end{bmatrix} $ \smallskip
+                                    & 12 & 无穷远平面 \\
+        \textbf{射影} &
+                        $ \begin{bmatrix}
+                          \, A_{2\times 2} & t_{2\times 1} \\
+                          f_{2\times 1}^{\top}  & w_{1\times 1}
+                        \end{bmatrix} $
+                                    & 15 & 接触平面的相切 \\
+        \bottomrule[1pt]
+      \end{tabular}
+      \begin{tablenotes}
+      \item[1] R为正交矩阵
+      \item[2] A为可逆矩阵，不要求正交
+      \end{tablenotes}
+    \end{threeparttable}
+  \end{table}
+}
+
+\subsection{平面间的映射}
+\subsubsection{变换关系}
+\frame { \transboxin<1>
+  \begin{figure}[htb] \centering
+    \includegraphics[width=.8\linewidth]{images/relationship.png}
+    \caption{\sf 变换关系示意图*}
+  \end{figure}
+}
+
+\subsubsection{二维射影平面模型}
+\frame { \frametitle{\bf 二维射影平面模型*} \transdissolve<1>
+  \begin{columns}
+    \begin{column}{.6\linewidth}
+      \begin{enumerate}[<+-|alert@+>]
+      \item 理解上，可以把$\mathbb{P}^{2}$看作$\mathbb{R}^{3}$中一种
+        \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+            rounded=true,shadow=false,wd=30mm,center,colsep=-2pt]{mycolor1}
+            射线的集合 \end{beamercolorbox}}\hspace{3pt}
+      \item 该集合所有向量$k(x_{1},x_{2}, x_{3})^{\top}$当$k$变化时形成过原点的射线
+        这样的一条射线可以看作是$\mathbb{P}^{2}$中的一个点
+      \item 模型中，$\mathbb{P}^{2}$中的直线是$\mathbb{R}^{3}$中过原点的平面
+      \item 点和线可以用平面(比如$x_{3}=1$)与这些射线和平面相交得到
+      \item $x_{1}x_{2}-\text{平面}$表示无穷远线$l_{\infty}$,而其上的射线表示理想点
+      \end{enumerate}
+    \end{column}
+    \begin{column}{.4\linewidth}
+      %e}[htb] \centering
+      %aphics[width=.8\linewidth]{images/projective_geometry_model.png}
+      %sf 透视投影示意图}
+      %
+      \begin{figure}[htb] \centering
+        \includegraphics[width=.8\linewidth]{images/2D_Projective_plane.png}
+        \caption{\sf 二维射影平面模型}
+      \end{figure}
+    \end{column}
+  \end{columns}
+}
+
+\section{单视图几何}
+\subsection{摄像机模型}
+\frame { \frametitle{\bf{有限射影相机}} \transcover<1>
+  \begin{figure}[htb] \centering
+    \includegraphics[width=.9\linewidth]{images/camera_models.png}
+   \caption{\sf 针孔相机模型示意图}
+ \end{figure}
+}
+\frame { \frametitle{\bf{内参矩阵}} \transdissolve<1>
+  \begin{block}{\centerline{相机内参矩阵$\mathtt{K}$}}
+    \center{
+      \begin{eqnarray*}
+        \mathtt{K}_{3\times 3} =
+        \begin{bmatrix}
+          f_{x} & s & c_{x} \\
+          0 & f_{y} & c_{y} \\
+          0 & 0 & 1
+        \end{bmatrix}
+      \end{eqnarray*}
+    }
+  \end{block}
+
+  相机内参矩阵又称为标定矩阵，是相机坐标系到图像坐标系的映射关系。
+  \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+      rounded=true,shadow=false,wd=40mm,center,colsep=-2pt]{mycolor1}
+      $w(u,v,1)^{\top}=\mathtt{K}(x,y,z)^{\top}$
+    \end{beamercolorbox}}\hspace{3pt}
+  就是射影相机从3维到二维的投影过程
+  \footnote{如果像素不是正方形， $f_{x}\neq f_{y}$。 其中s为扭曲参数，$c_{x},c_{y}$为主点偏置参数}。
+}
+\frame { \transdissolve<1> \frametitle{\bf{相机矩阵}%
+    \footnote{是世界坐标系到图像坐标系的映射关系，与内参矩阵间相差一个欧氏变换}}
+  \begin{block}<0->{\centerline{相机矩阵$\mathtt{P}$}}
+    \centerline{$\mathtt{P}_{3\times 4}=\mathtt{K}[\mathtt{R}|t]=[\mathtt{M}|p_{4}]$}
+  \end{block}
+  \begin{description}[<+-|alert@+>]
+  \item[相机中心] 相机中心$\mathtt{C}$是$\mathtt{P}$的一维右零空间，满足
+    \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+        rounded=true,shadow=false,wd=16mm,center,colsep=-2pt]{mycolor1}
+        $\mathtt{PC}=0$
+      \end{beamercolorbox}}\hspace{3pt}
+  \item[列点] $\mathtt{P}_{1}$、 $\mathtt{P}_{2}$、 $\mathtt{P}_{3}$分别对应于$X,Y,Z$轴在图像上的消影点。 \\
+    $\mathtt{P}_{4}$是坐标原点的图像
+  \item[主平面] $\mathtt{P}$的最后一行$\mathtt{P}^{3}$，是过相机中心$\mathtt{C}$并平行于像平面的平面。
+  \item[轴平面] 平面$\mathtt{P}^{1}$和$\mathtt{P}^{2}$表示空间中过相机中心的平面，分别对应于映射到图像上直线
+    $x=0$和$y=0$的点。
+  \item[主点] 图像点
+      \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+          rounded=true,shadow=false,wd=20mm,center,colsep=-2pt]{mycolor1}
+          $x_{0}=\mathtt{M}m^{3}$
+        \end{beamercolorbox}}\hspace{3pt}
+        是相机的主点，其中$m^{3\top}$是$\mathtt{M}$的第三行。是主轴与像平面的交点。
+    \item[主轴] 是过相机中心$\mathtt{C}$而方向向量为$m^{3\top}$的射线。主轴向量
+      \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+          rounded=true,shadow=false,wd=26mm,center,colsep=-2pt]{mycolor1}
+          $v=det(\mathtt{M})m^{3}$
+    \end{beamercolorbox}}\hspace{3pt}
+    指向相机的前方。
+  \end{description}
+}
+
+\subsection{摄像机标定}
+\subsubsection{从图像上恢复仿射性质}
+\frame { \transboxin<1> \frametitle{\bf{消除射影失真}\footnote{%
+    平行形状在消除射影失真中有重要应用――可用于计算消影点}}
+  \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+      rounded=true,shadow=false,wd=\linewidth,center,colsep=-2pt]{mycolor1}
+      在射影变换$H$下无穷远直线$l_{\infty}$为不动直线的充要条件是$H$为仿射变换
+    \end{beamercolorbox}}\hspace{3pt}
+
+  \begin{figwindow}[1,r,{\includegraphics[width=.68\linewidth]{images/affine_rectification.png}},{}]
+    \hspace{6.2mm}  如图所示，射影变换把$l_{\infty}$从欧氏平面$\pi_{1}$的 $(0,0,1)^{\top}$
+    映射到平面$\pi_{2}$的有限直线$l$。如果构造一个射影变换把$l$映射回$(0,0,1)^{\top}$，那么意味着$\pi_{1}$和$\pi_{3}$
+    之间相差一个仿射变换，即$\pi_{3}$是$\pi_{1}$的仿射像。
+  \end{figwindow}
+
+  \vspace{10mm}
+}
+
+\frame { \transdissolve<1> \frametitle{\bf{仿射矫正}}
+  \begin{columns}[T]
+    \begin{column}<1->{.48\linewidth}
+      如果无穷远直线$l_{\infty}$的像是
+      \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+          rounded=true,shadow=false,wd=36mm,center,colsep=-2pt]{mycolor1}
+          $l=(l_{1}, l_{2},l_{3})^{\top},l_{3}\neq 0$
+        \end{beamercolorbox}}\hspace{3pt},
+      那么把$l$映射回
+      \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+          rounded=true,shadow=false,wd=26mm,center,colsep=-2pt]{mycolor1}
+          $l_{\infty}=(0,0,1)^{\top}$
+        \end{beamercolorbox}}\hspace{3pt}的一个合适的射影变换是:
+        \begin{equation*}
+          \mathtt{H} = \mathtt{H}_{A}
+          \begin{bmatrix}
+            1,0,0\\0,1,0\\l_{1}, l_{2},l_{3}
+          \end{bmatrix}
+        \end{equation*}
+    \end{column}
+    \begin{column}<2->{.48\linewidth}
+      回顾射影变换的链式分解，上式对应链式分解中的射影分量：
+      \begin{equation*}
+        \mathtt{H}_{p} =
+        \begin{bmatrix}
+          \mathbf{\mathtt{I}} & 0 \\ \mathtt{v}^{\top}  & v
+        \end{bmatrix}
+      \end{equation*}
+    \end{column}
+  \end{columns}
+
+}
+\subsubsection{从图像上恢复度量性质}
+\frame { \transdissolve<1> \frametitle{\bf{虚圆点与绝对二次曲线} \footnote{%
+      如果$l^{\top}\mathtt{C}_{\infty}^{*}m=0$,则直线$l$和$m$正交――正交形状在标定中有重要应用。}}
+  \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+      rounded=true,shadow=false,wd=\linewidth,center,colsep=-2pt]{mycolor1}
+      \centerline{在射影变换$H$下虚圆点为不动点的充要条件是$H$为相似变换}
+    \end{beamercolorbox}}\hspace{3pt}
+
+  \begin{block}<1->{\centerline{虚圆点的标准坐标}}
+    \begin{eqnarray*}
+      \begin{cases}
+        \mathtt{I}=(1,i,0)^{\top} \\ \mathtt{J}=(1,-i,0)^{\top}
+      \end{cases}
+    \end{eqnarray*}
+  \end{block}
+
+  \begin{block}<2->{\centerline{与虚圆点对偶的二次曲线*}}
+    \begin{eqnarray*}
+      \mathtt{C}_{\infty}^{*} = \mathtt{I}\mathtt{J}^{\top} + \mathtt{J}\mathtt{I}^{\top}
+    \end{eqnarray*}
+  \end{block}
+}
+\frame { \transdissolve<1> \frametitle{\bf{得到标定矩阵$K$}}
+  \begin{block}<1->{\centerline{绝对二次曲线$\mathtt{C}_{\infty}^{*}$的像}}
+    \centerline{$\omega=(\mathtt{K}\mathtt{K}^{\top})^{-1}=\mathtt{K}^{-\top}\mathtt{K}^{-1}$}
+  \end{block}
+
+  \begin{block}<2->{\centerline{图像点$x_{1},x_{2}$间射线的夹角}}
+    \begin{columns}[T]
+      \begin{column}{.5\linewidth}
+          \begin{eqnarray*}
+            \begin{tabu}{rl}
+              \cos\theta = & \frac{(\mathtt{K}^{-1}x_{1})(\mathtt{K}^{-1}x_{2})}{%
+                \sqrt{(\mathtt{K}^{-1}x_{1})(\mathtt{K}^{-1}x_{1})}\sqrt{(\mathtt{K}^{-1}x_{2})(\mathtt{K}^{-1}x_{2})}} \\
+              = & \frac{x_{1}^{\top}(\mathtt{K}^{-\top}\mathtt{K}^{-1})x_{2}}{%
+                \sqrt{x_{1}^{\top}(\mathtt{K}^{-\top}\mathtt{K}^{-1})x_{1}}\sqrt{x_{2}^{\top}(\mathtt{K}^{-\top}\mathtt{K}^{-1})x_{2}}} \\
+              = & \frac{x_{1}^{\top}\omega x_{2}}{%
+                \sqrt{x_{1}^{\top}\omega x_{1}}\sqrt{x_{2}^{\top}\omega x_{2}}}
+            \end{tabu}
+          \end{eqnarray*}
+      \end{column}
+      \begin{column}{.5\linewidth}
+        \begin{enumerate}
+        \item<3-> 至此，相机做为一个具备{\bf 平面量角器}功能的设备已介绍完成
+        \item<4-> 相机的度量性质是
+          \hspace{1pt}\raisebox{-.5mm}{\begin{beamercolorbox}[%
+              rounded=true,shadow=false,wd=10mm,center,colsep=-2pt]{mycolor1}
+              夹角
+            \end{beamercolorbox}}\hspace{3pt} \footnote{由图像上的形状完成标定而不需要景物结构}
+        \item<5-> 标定就是从$\omega$通过Cholesky分解得到$\mathtt{K}$
+        \end{enumerate}
+      \end{column}
+    \end{columns}
+  \end{block}
+}
+\subsubsection{镜头畸变参数}
+\frame { \transboxin<1> \frametitle{\bf 镜头畸变参数}
+  \begin{block}<1->{\centerline{畸变向量 $[\mathtt{K}_{1}, \mathtt{K}_{2}, \mathtt{P}_{1}, \mathtt{P}_{2}, \mathtt{K}_{3}]$}}
+    \begin{columns}
+      \begin{column}{.46\linewidth}
+        \begin{exampleblock}<2->{\centerline{径向畸变数学模型}}
+          \begin{eqnarray*}
+            \begin{cases}
+              u^{'}=u(1+k_{1}r^{2}+k_{2}r^{4}+k_{3}r^{6}) \\
+              v^{'}=v(1+k_{1}r^{2}+k_{2}r^{4}+k_{3}r^{6}) \\
+              r^{2} = u^{2} + v^{2}
+            \end{cases}
+          \end{eqnarray*}
+        \end{exampleblock}
+      \end{column}
+      \begin{column}{.46\linewidth}
+        \begin{exampleblock}<3->{\centerline{切向畸变数学模型}}
+          \begin{eqnarray*}
+            \begin{cases}
+              u^{'}=u + [2p_{1}v + p_{2}(r^{2} + 2u^{2})] \\
+              v^{'}=v + [p_{1}(r^{2} + 2v^{2}) + 2p_{2}u] \\
+              r^{2} = u^{2} + v^{2}
+            \end{cases}
+          \end{eqnarray*}
+        \end{exampleblock}
+      \end{column}
+    \end{columns}
+  \end{block}
+}
+
+\section{双视图几何简述}
+\subsection{解决什么问题}
+\frame { \transcover<1> \frametitle{\bf 两视图几何主要解决的问题*}
+  \begin{enumerate}[<+-|alert@+>]
+  \item 视图间的对应几何
+    \begin{itemize}
+    \item 对极几何约束
+    \item 单应性约束
+    \end{itemize}
+  \item 相机几何--运动
+  \item 景物几何--结构
+  \end{enumerate}
+}
+\subsection{对应几何}
+\subsubsection{对极几何约束}
+\frame {  \transboxin<1> \frametitle{\bf{对极几何约束}}
+  \vspace{-5mm}
+  \begin{figure}[ht] \centering
+    \includegraphics[width=.6\linewidth]{images/epipolar2.png}
+  \end{figure}
+
+  \vspace{-5mm}
+  \begin{block}{\centerline{基本矩阵$\mathtt{F}$}}
+    \centerline{
+      \begin{beamercolorbox}[rounded=true,shadow=true,wd=.3\linewidth,center]{mycolor}
+        $x_{1}^{\top}\mathtt{F}x_{2}=0$
+      \end{beamercolorbox}
+    }
+    \begin{description}[<+-|alert@+>]
+    \item[本质] 两个视图上的对应点反向投影的射线共面
+    \item[效果] 一幅视图上的点对应于另一幅视图上的一条极线，
+      是一种两视图间的'点-线'应关系
+    \end{description}
+  \end{block}
+}
+\subsubsection{homograpy}
+\frame {  \transboxin<1> \frametitle{\bf{单应性约束}}
+  \hspace{8mm} 研究的是两幅视图和一张世界平面的射影几何，是一种两视图间的'点-点'应关系。\\
+  \hspace{8mm} 单应性约束是由一张世界平面诱导的，该论述来自于以下结论：
+  \begin{enumerate}
+  \item 相机光心不变的情况下，视图间可以由一个单应$\mathtt{H}$所关联，它们是相差一个射影变换的射影等价平面
+  \item 相机光心改变的情况下，只有同处于相同景物平面的像，可以由一个单应$\mathtt{H}$所关联，此时引入了一张世界平面
+  \item 两视图的对极线束间可以由一个单应$\mathtt{H}$所关联，如图所示
+  \end{enumerate}
+  \begin{figure}[htb] \centering
+    \includegraphics[width=.6\linewidth]{images/F_homograpy.png}
+    \caption{\sf 变换关系示意图}
+  \end{figure}
+}
+\subsubsection{相容性约束}
+\frame { \transboxin<1> \frametitle{\bf{相容性约束}}
+  一个单应$\mathtt{H}$与一个基本矩阵$\mathtt{F}$相容的充要条件是矩阵$\mathtt{H}^{\top}\mathtt{F}$
+    是反对称的，表示为：
+    \centerline{
+      \begin{beamercolorbox}[rounded=true,shadow=true,wd=.88\linewidth,center]{mycolor}
+        $\mathtt{H}^{\top}\mathtt{F} + \mathtt{F}^{\top}\mathtt{H} = 0$
+      \end{beamercolorbox}
+    }
+
+    \begin{enumerate}
+    \item $\mathtt{H}$比$\mathtt{F}$多三个景物结构自由度
+    \item $\mathtt{H}$和$\mathtt{F}$间可以相互计算（自由度不同）
+    \end{enumerate}
+}
+
+\section{三视图几何简述}
+\subsection{三焦点张量}
+\frame { \transcover<1> \frametitle{三焦点张量简介}
+  \hspace{6mm} 景物可以由三目装置的三个相机同时拍摄，或者由一个移动相机相继的拍摄。 \par
+  \hspace{6mm} 三焦点张量与两视图中的基本矩阵有类似的性质：仅依赖于相机间的射影关系，而与景物结构无关。
+  其本质可以描述为：
+  由三维空间中直线上的一点的图像引起的一种“点-线-线”对应几何：两幅视图中的对应直线反向投影成平面并在3维
+  空间中交于一条直线，同时从第三幅视图的对应点反向投影的射线必然与这条直线相交。\par
+  \hspace{6mm} 在重构中，三视图比两视图几何多一个好处：提供的测量值更多。更重要的是，在处理直线时，三视图几何基备了消除
+  测量误差的能力，而在两视图中由于测量数与自由度相同，无法为误差建模。 \par
+  \hspace{6mm} 根据对偶原理，上述“点-线-线”关系还有一个对偶的“线-点-点”关系。
+}
+
+\section{多视图几何的应用}
+\frame { \transcover<1> \frametitle{\bf 多视图几何的应用简介}
+  \begin{enumerate}
+  \item 自标定 \\
+    自标定是指直接由未标定的多幅图像来确定相机内参的过程。自标定一旦完成，就可以由这些图像计算度量重构。
+    比较典型的应用就是从网络上大量的图像数据进行三维重建。其原理就是绝对二次曲线在相似变换下保持不变。
+  \item 光束平差 \\
+    略
+  \end{enumerate}
+}
+
+\section{学习误区}
+\frame { \transcover<1> \frametitle{\bf{跳过的坑分享}}
+  \begin{enumerate}[<+-|alert@+>]
+  \item 把“单目、双目、结构光”和“单视、双视、多视图”简单对号入座――它们没有直接关系
+  \item 射影变换的别名： 直射变换、保线变换、单应(homography)――不要怕，它们都一样
+  \item 以为有了理想点和无穷远线后我们就建立了“射影坐标系”――其实在研究射影变换的过程中我们只有欧氏坐标系
+  \item 认为对偶就是点和线的对偶――对偶原理比较广泛，点和线的对偶只是一种情况
+  \item 以为平行投影就是在两张平行射影平面间的映射关系――应该理解为入射光平行
+  \item 以为透视投影就是小孔成像模型，透过小孔后成像是倒的――是建立了直角坐标系的中心投影
+  \item 以为平行投影和中心投影也是变换群\footnote{%
+    代数结构: 群、环和域。其中群定义了'*'运算，'*'也称为群运算}--它们是"变换元"。
+  \end{enumerate}
+
+}
+
+\section{估计}
+\frame { \transcover<1> \frametitle{\bf{估计的几种应用}}
+  \begin{description} [<+-|alert@+>]
+  \item[2D单应]
+  \item[3D到2D的摄像机投影]
+  \item[基本矩阵的计算]
+  \item[三焦点张量计算]
+  \end{description}
+
+  他们具有共同关注的特点：测量数、近似解、最小配置解。
+  以及具有两类主要的代价函数：基于最小化误差的代价函数和基于最小化几何的或统计的图像距离的代价
+  函数。不同的代价函数以及他们最小化方法是我们重点关注的内容。
+}
+
+\subsection{黄金标准算法}
+\frame {
+  通常存在一种最优的代价函数，其最优的含义是在一定的假设下，是代价函数最最小值的$H$是变换的
+  最好估计。计算该代价函数最小值的算法称为"黄金标准"算法。其他算法的结果的优劣依他们与黄金
+  标准算法的比较来判定。
+}
+
+\section{结束}
+\frame{ \transcover<1> \frametitle{\bf 水平有限，难免有误}
+  \framesubtitle{\sc 欢迎批评和指正，多多交流！}
+  \begin{center}
+    \qyxreserve{-2mm}{\fontsize{40}{30} \bf 谢谢大家!}
+  \end{center}
+}
+
+\end{document}

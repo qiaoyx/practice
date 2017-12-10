@@ -1,0 +1,130 @@
+#+BEGIN_LaTex
+\lstset{
+  showspaces=false,
+  showtabs=false,
+  tabsize=4,
+  keywordstyle=\color{blue}\tt,
+  language=C++,
+  numbers=right,
+  numberstyle=\small,
+  basicstyle=\tt,
+  directivestyle=\tt,
+  identifierstyle=\tt,
+  commentstyle=\tt,
+  stringstyle=\tt,
+  frameround=fttt,
+  frame=trBL,
+  framerule=1pt,
+  backgroundcolor=\color{yellow!50!blue!50},
+  % framexleftmargin=10mm,
+  % framexrightmargin=10mm,
+  % framextopmargin=5mm,
+  % framexbottommargin=5mm,
+  emph={GlobalUnlock,GlobalFree},
+  emphstyle=\underbar,
+  emph={[2]GlobalLock,GetImage},
+  emphstyle={[2]\color{red}}
+}
+#+END_LaTex
+* Document Settings                                                             :noexport:
+#+TITLE:   培训大纲
+#+INCLUDE: "report.org"
+#+AUTHOR:  乔宇轩
+
+#+OPTIONS: H:3 num:t toc:t \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:nil pri:nil tags:nil P:t e:t
+#+OPTIONS: html-postamble:nil html-preamble:nil tex:t
+
+#+LaTeX_HEADER: \fancyhead[EC,OC]{\sc 培训大纲}
+
+* 培训题目
+** 复杂度
+*** 大O记号
+
+** 资源
+   文件描述符(file socket port)， CPU时间， 内存， 磁盘， 总线 ...\\
+
+** 进程
+   进程是操作系统分配资源的单位
+*** 地址空间――虚拟地址
+    32位系统中， 虚拟地址空间为2^32, 在公平公正原则下，平均分配给内核和用户。
+    地址空间范围： 0x0~0xFFFFFFFF
+
+** 线程
+   线程是系统任务调度的单位。同一进程的多个线程共享地址空间。
+*** 临界区
+*** SLEEP
+    只能用于控制循环的节奏，不能用于控制调度。
+*** 线程与队列
+*** 生产者消费者模型
+
+** 生命周期
+
+** 状态机
+*** 简介
+**** 确定有限状态机——DFA
+**** 不确定有限状态机——NFA
+**** 动作和状态迁移表
+**** NFA转DFA
+*** 闭包
+    闭包和递归，只要掌握了，你能够成为一名优秀的程序员，你会比其他人更具洞查力，会更高效。
+*** 退出条件
+*** 分层设计
+*** 向前看
+*** 状态碰撞检测
+    用于两个独立状态机之间建立联系。
+
+*** 简介
+   递归的精髓：循环不变量与退出条件
+   典型的递归结构：树和图
+   递归吃存储，而不是CPU \\
+   当你把一个问题转化为递归方式实现， 那么这个问题对你而言已经足够“简单”了。
+   同时能够明确功能块的边界，内聚高。
+   为什么吃内存？ 函数调用过程的理解和循环式的区别。 但执行效率同迭代区别不大
+   数学模型：数学归纳法
+   理解递与归： 递描述问题，归解决问题
+   递归与分治天生的好朋友
+
+*** 计算机程序的函数调用过程就是递归式的
+    只有了解了递归，才能真正的掌握函数的调用过程
+
+*** 解决哪类问题
+    递归一般用于解决三类问题：
+    　  (1) 数据的定义是按递归定义的。（Fibonacci函数，n的阶乘）
+    　  (2) 问题解法按递归实现。（回溯）
+    　  (3) 数据的结构形式是按递归定义的。（二叉树的遍历，图的搜索）
+*** 退出条件的妙用
+*** 队列与栈结构的体现
+    递归前的语句按照顺序执行
+    递归后面的语句按照先进后出的顺序执行
+*** 递归转迭代
+    - 在c++等语言中，尾递归通过-O3优化后，可以很好的消除栈增长问题，同循环的区别不大
+    - 尾递归转循环，由于当前过程退出，正好在上一级过程的退出点，处理起来比较容易。需要增加一个变量来存储结果。
+    - 不是尾递归，转换时，递归调用前面需要一个变量保存结果，而后面需要一个栈式结构进行回溯。\\
+      但，仅仅是思路，比如fib(n)函数，使用循环的方式怎么实现？
+
+** 排序
+*** 冒泡排序
+*** 快速排序
+*** 插入排序
+*** 图运算与排序
+
+** 二叉树与堆排序
+** 内存对齐
+** 大端与小端
+** 时间管理
+** 设计理念
+   - 只有代码会引起Bug，代码越少bug越少。精简是软件稳定最有效的手段。
+   - 做软件需要知道做什么，做好软件还需要知道不做什么。
+   - 软件 ＝ 数据结构 ＋ 算法。
+   - 必需具备的思想： 递归 ＋ 闭包
+   - 框架结构化＋功能扁平化。
+   - 设计过程中要逐步明确以下几点：
+     - 变化的部分有哪些？
+     - 不变的部分有哪些？
+     - 经常出现的问题有哪些？
+     - 如何错误恢复？
+     - 诊断决策与错误恢复流程，独立的监视流程
+* 图表目录
+#+LATEX: \listoftables
+#+LATEX: \listoffigurse
