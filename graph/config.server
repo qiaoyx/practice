@@ -1,0 +1,10 @@
+#
+# The server creates one single object adapter with the name
+# "SessionFactory". The following line sets the endpoints for this
+# adapter.
+#
+RobotPathAdapter.Endpoints=default -h 0.0.0.0 -p 9090
+#
+# Warn about connection exceptions
+#
+Ice.Warn.Connections=1
