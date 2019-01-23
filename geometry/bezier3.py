@@ -116,7 +116,7 @@ class Bezier3:
         plt.plot([x0, x1, x2, x3], [y0, y1, y2, y3], 'k*')
         plt.plot([x0, x1, x2, x3], [y0, y1, y2, y3], 'k--')
         plt.plot(xs, ys, 'b-', linewidth=3)
-        plt.plot(xs, curvature, 'y-', linewidth=1)
+        # plt.plot(xs, curvature, 'y-', linewidth=1)
 
         plt.plot([self.p.pose.position.x, self.p.pose.position.x+1.],
                  [self.p.pose.position.y,
@@ -132,7 +132,7 @@ class Bezier3:
 # ps = [(1.5, 0.2, -0.1), (1.5, 0.2, 0.1),
 #       (1.0, 0.1, -0.1), (2.0, 0.2, -0.2),
 #       (0.5, 0.05, 0.05)]
-ps = [(1.5, 0.1, -0.1)]
+ps = [(1., 0.5, -0.8)]
 if __name__ == '__main__':
     for i in range(len(ps)):
         rot = tf.transformations.quaternion_from_euler(0, 0, math.pi+ps[i][2])

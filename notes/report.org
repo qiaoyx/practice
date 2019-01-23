@@ -18,6 +18,7 @@
 #+LATEX_HEADER: \usepackage{tabularx,multirow,multicol,longtable,threeparttable,tabu,colortbl,dcolumn}
 #+LATEX_HEADER: \usepackage[justification=centering,textfont=sc,labelsep=quad]{caption}
 #+LATEX_HEADER: \setmainfont{Lucida Std Roman}
+%#+LATEX_HEADER: \setmainfont{Helvetica Neue LT Std}
 #+LATEX_HEADER: %\setmonofont{Lucida Typewriter Std}
 #+LATEX_HEADER: \setsansfont{Lucida Sans Std Roman}
 #+LATEX_HEADER: %\setmainfont{Times New Roman}
@@ -52,10 +53,12 @@
 #+LaTeX_HEADER: \pagestyle{fancy} \fancyhf{}
 %#+LaTeX_HEADER: \fancyhead[EL,OL]{\includegraphics[height=8mm]{./images/logo.png}}
 #+LaTeX_HEADER: \fancyhead[EL,OL]{\LaTeX}
-#+LaTeX_HEADER: \fancyhead[ER,OR]{\sc {\color{red} 内部公开}}
+%#+LaTeX_HEADER: \fancyhead[ER,OR]{\sc {\color{red} 内部公开}}
+#+LaTeX_HEADER: \fancyhead[ER,OR]{\sc {\color{red} My Note}}
 #+LaTeX_HEADER: \fancyfoot{}
 #+LaTeX_HEADER: \fancyfoot[R]{\sc \small 第\thepage$\slash$\pageref{LastPage}页}
-#+LaTeX_HEADER: \fancyfoot[L]{\sc \small 知识产权属XX所有}
+%#+LaTeX_HEADER: \fancyfoot[L]{\sc \small 知识产权属XX所有}
+#+LaTeX_HEADER: \fancyfoot[L]{\sc \small 分享快乐！}
 #+LaTeX_HEADER: \renewcommand\headrule{\color{gray} \hrule height 2pt width\headwidth
 #+LaTeX_HEADER:   \vspace{1pt}
 #+LaTeX_HEADER:   \hrule height 1pt width\headwidth \vspace{-4pt}}

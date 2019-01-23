@@ -1,0 +1,63 @@
+#+BEGIN_LaTex
+\lstset{
+  showspaces=false,
+  showtabs=false,
+  tabsize=4,
+  keywordstyle=\color{blue}\tt,
+  language=C++,
+  morekeywords={with, in, as},
+  numbers=none,
+  numberstyle=\small,
+  basicstyle=\tt,
+  directivestyle=\tt,
+  identifierstyle=\tt,
+  commentstyle=\tt,
+  stringstyle=\tt,
+  frameround=ffff,
+  frame=trBL,
+  framerule=1pt,
+  backgroundcolor=\color[rgb]{1, .98, .8},
+  % framexleftmargin=10mm,
+  % framexrightmargin=10mm,
+  % framextopmargin=5mm,
+  % framexbottommargin=5mm,
+  emph={join,open,listdir, write, import},
+  emphstyle=\underbar,
+  emph={[2]python,cd,mkdir,touch,sed,sudo, apt-get, cp, cmake, make, pip, git},
+  emphstyle={[2]\color{orange}}
+}
+#+END_LaTex
+* Document Settings                                                             :noexport:
+#+TITLE:   Category Theory and Haskell
+#+INCLUDE: "report.org"
+#+AUTHOR:  乔宇轩
+
+#+OPTIONS: H:3 num:t toc:t \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:t todo:t pri:t tags:not-in-toc P:t
+#+OPTIONS: html-postamble:nil html-preamble:nil tex:t
+#+LaTeX_HEADER: \fancyhead[EC,OC]{\sc Category Theory and Haskell}
+#+LaTeX_HEADER: \setcounter{tocdepth}{2}
+
+* Start
+  #+BEGIN_SRC haskell
+  (*3) <$> [1..5]
+  #+END_SRC
+
+  #+RESULTS:
+  | 3 | 6 | 9 | 12 | 15 |
+
+  #+BEGIN_SRC haskell
+  fmap (replicate 3) $ (\x->[[x*2], [x+3]]) =<< [1..5]
+  #+END_SRC
+
+  #+RESULTS:
+  | (2)  | (2)  | (2)  |
+  | (4)  | (4)  | (4)  |
+  | (4)  | (4)  | (4)  |
+  | (5)  | (5)  | (5)  |
+  | (6)  | (6)  | (6)  |
+  | (6)  | (6)  | (6)  |
+  | (8)  | (8)  | (8)  |
+  | (7)  | (7)  | (7)  |
+  | (10) | (10) | (10) |
+  | (8)  | (8)  | (8)  |
